@@ -1,0 +1,5 @@
+# The design bundle is the source of truth — keep it byte-exact.
+*.dc.html binary
+"Kasityot Landing v2 (offline).html" binary
+*.jpg binary
+*.png binary
