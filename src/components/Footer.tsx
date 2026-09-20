@@ -1,31 +1,20 @@
 import Link from "next/link";
 
+/* No "Apply to sell" or newsletter: artists never self-register in this
+   version, and the owner adds them by hand. */
 const COLUMNS = [
   {
-    heading: "Shop",
+    heading: "Browse",
     links: [
-      { label: "New arrivals", href: "#pieces" },
-      { label: "Collections", href: "#collections" },
-      { label: "Vessels", href: "#pieces" },
-      { label: "Textiles", href: "#pieces" },
-    ],
-  },
-  {
-    heading: "Makers",
-    links: [
-      { label: "Directory", href: "#maker" },
-      { label: "Apply to sell", href: "#maker" },
-      { label: "Commissions", href: "#commission" },
-      { label: "Residencies", href: "#maker" },
+      { label: "All artworks", href: "/artworks" },
+      { label: "All artists", href: "/artists" },
     ],
   },
   {
     heading: "House",
     links: [
-      { label: "Provenance", href: "#top" },
-      { label: "Repairs", href: "#top" },
-      { label: "Shipping", href: "#top" },
-      { label: "Contact", href: "#top" },
+      { label: "About", href: "/about" },
+      { label: "Contact", href: "/contact" },
     ],
   },
 ];
@@ -39,11 +28,11 @@ export function Footer() {
             K
           </span>
           <div className="font-sans text-[12px] tracking-logo uppercase">
-            Käsityöt
+            Kasityot
           </div>
           <p className="m-0 text-body-sm leading-[1.7] text-bone-muted">
-            A marketplace for the slow trades. Founded in Helsinki, shipping
-            worldwide, insured to the door.
+            A marketplace for Indian handicraft. Every piece is one of a kind,
+            made by hand, and signed by the artist who made it.
           </p>
         </div>
 
@@ -66,9 +55,8 @@ export function Footer() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-bone/14 pt-6.5 font-mono text-label-sm tracking-rail text-slate-dim uppercase">
-        <span>© 2026 Käsityöt Oy</span>
-        <span>Helsinki · Kyoto · Lisbon</span>
-        <span>Terms · Privacy</span>
+        <span>© {new Date().getFullYear()} Kasityot</span>
+        <span>Handmade in India</span>
       </div>
     </footer>
   );

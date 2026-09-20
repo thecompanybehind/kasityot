@@ -25,9 +25,12 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Käsityöt — The hand, unhurried.",
+  title: {
+    default: "Kasityot — The hand, unhurried.",
+    template: "%s",
+  },
   description:
-    "A marketplace for the slow trades. Objects made slowly, by people we know by name. Signed, traceable, and meant to outlive their first owner.",
+    "A marketplace for Indian handicraft. One-of-a-kind pieces made by hand, signed by the artist who made them.",
 };
 
 export default function RootLayout({

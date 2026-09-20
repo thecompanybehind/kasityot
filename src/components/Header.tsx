@@ -3,23 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+/* Cart, Commission and Journal are deliberately absent: the README rules out
+   carts, multi-item checkout and a blog. One artwork, one purchase. */
 const NAV = [
-  { label: "Pieces", href: "#pieces" },
-  { label: "Makers", href: "#maker" },
-  { label: "Collections", href: "#collections" },
-  { label: "Commission", href: "#commission" },
-  { label: "Journal", href: "#journal" },
+  { label: "Artworks", href: "/artworks" },
+  { label: "Artists", href: "/artists" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
-
-function Monogram({ size = "size-[30px]", text = "text-[17px]" }) {
-  return (
-    <span
-      className={`grid ${size} place-items-center border border-brass font-display ${text} text-brass`}
-    >
-      K
-    </span>
-  );
-}
 
 export function Header() {
   const [open, setOpen] = useState(false);
@@ -34,19 +25,20 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-60 flex flex-wrap items-center justify-between gap-6 border-b border-brass/28 bg-ink/82 px-[30px] py-5 backdrop-blur-[16px]">
-      <Link href="#top" className="flex items-center gap-3.5">
-        <Monogram />
+      <Link href="/" className="flex items-center gap-3.5">
+        <span className="grid size-[30px] place-items-center border border-brass font-display text-[17px] text-brass">
+          K
+        </span>
         <span className="flex flex-col gap-[3px]">
           <span className="font-sans text-[12px] tracking-logo uppercase">
-            Käsityöt
+            Kasityot
           </span>
           <span className="font-mono text-label-xs tracking-widest text-slate uppercase">
-            Helsinki · MMXXVI
+            Handmade in India
           </span>
         </span>
       </Link>
 
-      {/* Desktop navigation */}
       <nav className="hidden flex-wrap gap-7 font-mono text-label tracking-nav uppercase lg:flex">
         {NAV.map((item) => (
           <Link
@@ -61,19 +53,12 @@ export function Header() {
 
       <div className="flex items-center gap-5 font-mono text-label tracking-nav uppercase">
         <Link
-          href="#pieces"
-          className="hidden transition-colors duration-200 hover:text-brass sm:inline"
-        >
-          Search
-        </Link>
-        <Link
-          href="#pieces"
+          href="/artworks"
           className="rounded-pill border border-brass/55 px-[18px] py-2.5 text-brass transition-colors duration-200 hover:border-brass hover:bg-brass hover:text-ink"
         >
-          Cart (0)
+          Browse
         </Link>
 
-        {/* Mobile trigger — three rules that fold into a cross. */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -100,7 +85,6 @@ export function Header() {
         </button>
       </div>
 
-      {/* Mobile sheet — same ground, rules and mono type as the rest of the site. */}
       <div
         id="mobile-nav"
         hidden={!open}
@@ -117,13 +101,6 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <Link
-            href="#pieces"
-            onClick={() => setOpen(false)}
-            className="py-5 font-mono text-label tracking-nav text-slate uppercase"
-          >
-            Search
-          </Link>
         </nav>
       </div>
     </header>
