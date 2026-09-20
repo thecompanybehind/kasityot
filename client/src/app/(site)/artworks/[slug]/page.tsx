@@ -5,9 +5,19 @@ import { ArtworkGallery } from "@/components/ArtworkGallery";
 import { ArtworkActions } from "@/components/ArtworkActions";
 import { Media } from "@/components/ui/Media";
 import { formatPrice } from "@/lib/format";
-import { getArtworkBySlug, getArtistBySlug } from "@/lib/queries";
+import { getArtworkBySlug, getArtistBySlug, getArtworks } from "@/lib/queries";
+
+/** Cached for a minute. generateStaticParams pre-builds the pages that exist at deploy time. */
+export const revalidate = 60;
 
 type Params = { slug: string };
+
+/** Pre-build every artwork page that exists at deploy time, so the first
+ *  visitor does not pay for a cold database round trip. */
+export async function generateStaticParams() {
+  const artworks = await getArtworks();
+  return artworks.map((a) => ({ slug: a.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -21,7 +31,15 @@ export async function generateMetadata({
   return {
     title: `${artwork.title} — Kasityot`,
     description: artwork.description.slice(0, 155),
+    alternates: { canonical: `/artworks/${artwork.slug}` },
     openGraph: {
+      type: "website",
+      title: artwork.title,
+      description: artwork.description.slice(0, 155),
+      images: artwork.images.length ? [artwork.images[0]] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
       title: artwork.title,
       description: artwork.description.slice(0, 155),
       images: artwork.images.length ? [artwork.images[0]] : [],
@@ -56,8 +74,40 @@ export default async function ArtworkPage({
 
   const sold = artwork.status === "sold";
 
+  const base =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+    "http://localhost:3000";
+
+  /* Product structured data. Price-on-request pieces advertise no offer
+     price, since schema.org has no way to say "ask us". */
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: artwork.title,
+    description: artwork.description,
+    image: artwork.images,
+    material: artwork.material,
+    ...(artist ? { brand: { "@type": "Person", name: artist.name } } : {}),
+    offers: {
+      "@type": "Offer",
+      url: `${base}/artworks/${artwork.slug}`,
+      priceCurrency: "INR",
+      ...(artwork.price != null
+        ? { price: (artwork.price / 100).toFixed(2) }
+        : {}),
+      availability: sold
+        ? "https://schema.org/SoldOut"
+        : "https://schema.org/InStock",
+      itemCondition: "https://schema.org/NewCondition",
+    },
+  };
+
   return (
     <article className="px-(--spacing-section-x) py-(--spacing-section-y)">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Link
         href="/artworks"
         className="font-mono text-label-sm tracking-rail text-slate uppercase transition-colors hover:text-brass"

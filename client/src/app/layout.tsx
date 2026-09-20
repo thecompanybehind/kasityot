@@ -25,12 +25,21 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  // Relative Open Graph image paths resolve against this.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ),
   title: {
     default: "Kasityot — The hand, unhurried.",
     template: "%s",
   },
   description:
     "A marketplace for Indian handicraft. One-of-a-kind pieces made by hand, signed by the artist who made them.",
+  openGraph: {
+    type: "website",
+    siteName: "Kasityot",
+    locale: "en_IN",
+  },
 };
 
 export default function RootLayout({

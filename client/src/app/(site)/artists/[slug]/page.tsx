@@ -4,9 +4,18 @@ import { notFound } from "next/navigation";
 import { ArtworkCard } from "@/components/ArtworkCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Media } from "@/components/ui/Media";
-import { getArtistBySlug, getArtworksByArtist } from "@/lib/queries";
+import { getArtistBySlug, getArtists, getArtworksByArtist } from "@/lib/queries";
+
+/** Cached for a minute. generateStaticParams pre-builds the pages that exist at deploy time. */
+export const revalidate = 60;
 
 type Params = { slug: string };
+
+/** Pre-build every artist page that exists at deploy time. */
+export async function generateStaticParams() {
+  const artists = await getArtists();
+  return artists.map((a) => ({ slug: a.slug }));
+}
 
 export async function generateMetadata({
   params,

@@ -5,6 +5,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { getArtists, getArtworks, type ArtworkFilters as Filters } from "@/lib/queries";
 
+/** Cached for a minute: the listing hits the database on every request otherwise. */
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Artworks — Kasityot",
   description:

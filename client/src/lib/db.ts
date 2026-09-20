@@ -36,8 +36,16 @@ export async function connectDB(): Promise<typeof mongoose> {
   if (!cached.promise) {
     cached.promise = mongoose.connect(uri, {
       bufferCommands: false,
-      // Fail fast with a clear error rather than hanging a page render.
-      serverSelectionTimeoutMS: 10_000,
+      /*
+       * A build prerenders many pages at once, and an Atlas free-tier
+       * cluster can take several seconds to accept the first connection
+       * — 10s was tight enough to fail a build intermittently. 30s costs
+       * nothing when the cluster is warm, because this resolves as soon
+       * as a server is selected.
+       */
+      serverSelectionTimeoutMS: 30_000,
+      socketTimeoutMS: 45_000,
+      maxPoolSize: 10,
     });
   }
 

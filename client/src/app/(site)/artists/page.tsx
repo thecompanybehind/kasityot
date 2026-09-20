@@ -3,6 +3,9 @@ import { ArtistDirectory } from "@/components/ArtistDirectory";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { getArtists } from "@/lib/queries";
 
+/** Cached for a minute: the directory hits the database on every request otherwise. */
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Artists — Kasityot",
   description:
