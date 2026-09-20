@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { connectDB, Artwork, Enquiry } from "@kasityot/core";
+import { isArtworkPubliclyVisible } from "@/lib/queries";
 import { notifyNewEnquiry } from "@/lib/notify";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 
@@ -73,6 +74,11 @@ export async function submitEnquiry(
   // piece sold while this form sat open.
   const artwork = await Artwork.findById(artworkId).lean();
   if (!artwork) {
+    return { ok: false, error: "That artwork is no longer listed." };
+  }
+  // Same reasoning as the checkout route: the id comes from the form, so a
+  // piece awaiting review must not accept enquiries by its id alone.
+  if (!(await isArtworkPubliclyVisible(artworkId))) {
     return { ok: false, error: "That artwork is no longer listed." };
   }
   if (artwork.status !== "available") {

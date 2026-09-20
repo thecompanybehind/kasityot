@@ -96,16 +96,96 @@ function toArtwork(doc: Record<string, unknown>): ArtworkView {
 }
 
 /* ---------------------------------------------------------------- *
- * Public reads — these must never leak hidden records.
+ * Public reads — these must never leak hidden or unapproved records.
  * ---------------------------------------------------------------- */
 
-/** Visible artists only. */
+/**
+ * Two independent conditions have to hold for anything to be public: the
+ * owner's display choice (status) and the owner's review decision
+ * (applicationStatus / reviewStatus). Both are spread into every public
+ * query below — a query that omits one leaks unapproved work.
+ *
+ * The $exists clause covers rows written before the review fields were
+ * added. Mongoose applies a schema default on write, not on read, so those
+ * rows genuinely have no value and a plain equality match would exclude
+ * every one of them. They are backfilled by packages/core's backfill
+ * script; treating a missing value as approved here means a forgotten
+ * backfill cannot take the whole live site dark.
+ *
+ * Not declared `as const`: that makes $or a readonly tuple, which Mongoose's
+ * filter types reject as immutable. Every read spreads a fresh copy, so a
+ * mutable shared literal is not itself a hazard.
+ */
+const PUBLIC_ARTIST: Record<string, unknown> = {
+  status: "visible",
+  $or: [
+    { applicationStatus: "approved" },
+    { applicationStatus: { $exists: false } },
+  ],
+};
+
+const PUBLIC_ARTWORK: Record<string, unknown> = {
+  // Sold pieces stay on the site, clearly marked; hidden ones never appear.
+  status: { $in: ["available", "sold"] },
+  $or: [{ reviewStatus: "approved" }, { reviewStatus: { $exists: false } }],
+};
+
+/**
+ * The review half of PUBLIC_ARTWORK, for reads that set their own status.
+ * Typed loosely because an inferred `string` widens past the schema's literal
+ * union and Mongoose's filter types then reject it.
+ */
+const APPROVED_REVIEW: Record<string, unknown>[] = [
+  { reviewStatus: "approved" },
+  { reviewStatus: { $exists: false } },
+];
+
+/**
+ * Both helpers use $or, so they cannot simply be merged into one object
+ * literal — the second $or key would overwrite the first. Queries needing
+ * both conditions combine them under $and instead.
+ */
+function publicArtworkByVisibleArtist(
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return { $and: [PUBLIC_ARTWORK, extra] };
+}
+
+/**
+ * True when this piece is approved for public display.
+ *
+ * Used by the checkout and enquiry endpoints, which look an artwork up by id
+ * straight from the request body and so bypass the query helpers above. An
+ * id is guessable and those routes are unauthenticated: without this check a
+ * buyer could pay for, or enquire about, a piece the owner has not approved.
+ */
+export async function isArtworkPubliclyVisible(
+  artworkId: string,
+): Promise<boolean> {
+  await connectDB();
+  const doc = await Artwork.findOne(
+    publicArtworkByVisibleArtist({ _id: artworkId }),
+  )
+    .select("artistId")
+    .lean();
+  if (!doc) return false;
+
+  const artist = await Artist.findOne({
+    ...PUBLIC_ARTIST,
+    _id: String(doc.artistId),
+  })
+    .select("_id")
+    .lean();
+  return Boolean(artist);
+}
+
+/** Visible, approved artists only. */
 export async function getArtists(filters?: {
   craftType?: string;
   region?: string;
 }): Promise<ArtistView[]> {
   await connectDB();
-  const query: Record<string, unknown> = { status: "visible" };
+  const query: Record<string, unknown> = { ...PUBLIC_ARTIST };
   if (filters?.craftType) query.craftType = filters.craftType;
   if (filters?.region) query.region = filters.region;
 
@@ -115,7 +195,7 @@ export async function getArtists(filters?: {
 
 export async function getArtistBySlug(slug: string): Promise<ArtistView | null> {
   await connectDB();
-  const doc = await Artist.findOne({ slug, status: "visible" }).lean();
+  const doc = await Artist.findOne({ ...PUBLIC_ARTIST, slug }).lean();
   return doc ? toArtist(doc) : null;
 }
 
@@ -139,8 +219,8 @@ export async function getArtworks(
 
   const visibleArtists = await Artist.find(
     filters.craftType
-      ? { status: "visible", craftType: filters.craftType }
-      : { status: "visible" },
+      ? { ...PUBLIC_ARTIST, craftType: filters.craftType }
+      : { ...PUBLIC_ARTIST },
   )
     .select("_id slug")
     .lean();
@@ -151,10 +231,7 @@ export async function getArtworks(
     allowedIds = match ? [match._id] : [];
   }
 
-  const query: Record<string, unknown> = {
-    status: { $in: ["available", "sold"] },
-    artistId: { $in: allowedIds },
-  };
+  const extra: Record<string, unknown> = { artistId: { $in: allowedIds } };
 
   // Price-on-request pieces have a null price and are excluded by a price
   // filter rather than treated as free.
@@ -162,8 +239,10 @@ export async function getArtworks(
     const range: Record<string, number> = {};
     if (filters.minPrice !== undefined) range.$gte = filters.minPrice;
     if (filters.maxPrice !== undefined) range.$lte = filters.maxPrice;
-    query.price = range;
+    extra.price = range;
   }
+
+  const query = publicArtworkByVisibleArtist(extra);
 
   const sortMap = {
     newest: { createdAt: -1 },
@@ -184,19 +263,23 @@ export async function getArtworkBySlug(
   slug: string,
 ): Promise<ArtworkView | null> {
   await connectDB();
-  const doc = await Artwork.findOne({
-    slug,
-    status: { $in: ["available", "sold"] },
-  })
+  const doc = await Artwork.findOne(publicArtworkByVisibleArtist({ slug }))
     .populate("artistId", "name slug craftType region")
     .lean();
   if (!doc) return null;
 
   const view = toArtwork(doc);
-  // An artwork whose artist was hidden must not be publicly reachable.
+  // An artwork whose artist is hidden or unapproved must not be reachable,
+  // even by its own direct URL. Mongo will not join for us, so the artist is
+  // re-checked against the same condition the listing uses.
   if (view.artist) {
-    const artist = await Artist.findById(view.artist.id).select("status").lean();
-    if (!artist || artist.status !== "visible") return null;
+    const artist = await Artist.findOne({
+      ...PUBLIC_ARTIST,
+      _id: view.artist.id,
+    })
+      .select("_id")
+      .lean();
+    if (!artist) return null;
   }
   return view;
 }
@@ -206,10 +289,7 @@ export async function getArtworksByArtist(
   artistId: string,
 ): Promise<ArtworkView[]> {
   await connectDB();
-  const docs = await Artwork.find({
-    artistId,
-    status: { $in: ["available", "sold"] },
-  })
+  const docs = await Artwork.find(publicArtworkByVisibleArtist({ artistId }))
     .sort({ createdAt: -1 })
     .lean();
   return docs.map(toArtwork);
@@ -217,10 +297,14 @@ export async function getArtworksByArtist(
 
 export async function getFeaturedArtworks(limit = 6): Promise<ArtworkView[]> {
   await connectDB();
-  const visible = await Artist.find({ status: "visible" }).select("_id").lean();
+  const visible = await Artist.find(PUBLIC_ARTIST).select("_id").lean();
   const docs = await Artwork.find({
-    status: "available",
-    artistId: { $in: visible.map((a) => a._id) },
+    $and: [
+      // Narrower than PUBLIC_ARTWORK: the home page shows only what can
+      // still be bought, so sold pieces are left out here.
+      { $or: APPROVED_REVIEW },
+      { status: "available", artistId: { $in: visible.map((a) => a._id) } },
+    ],
   })
     .populate("artistId", "name slug craftType region")
     .sort({ featured: -1, createdAt: -1 })
@@ -232,9 +316,11 @@ export async function getFeaturedArtworks(limit = 6): Promise<ArtworkView[]> {
 /** Distinct values that drive the public filter controls. */
 export async function getFilterOptions() {
   await connectDB();
+  // Scoped to public artists, or a pending applicant's craft would appear as
+  // a filter option that matches nothing.
   const [craftTypes, regions] = await Promise.all([
-    Artist.distinct("craftType", { status: "visible" }),
-    Artist.distinct("region", { status: "visible" }),
+    Artist.distinct("craftType", PUBLIC_ARTIST),
+    Artist.distinct("region", PUBLIC_ARTIST),
   ]);
   return {
     craftTypes: (craftTypes as string[]).sort(),

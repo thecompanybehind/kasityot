@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { connectDB, Artwork, Order } from "@kasityot/core";
+import { isArtworkPubliclyVisible } from "@/lib/queries";
 
 /**
  * Creates a Razorpay order server side and records our own Order row.
@@ -48,6 +49,13 @@ export async function POST(request: Request) {
   const artwork = await Artwork.findById(artworkId).lean();
 
   if (!artwork) {
+    return NextResponse.json({ error: "Artwork not found." }, { status: 404 });
+  }
+  // The id arrives in the request body, so approval is re-checked here: a
+  // piece awaiting review must not be purchasable by its id alone. Reported
+  // as "not found" rather than "not approved", which would confirm the id
+  // exists to someone probing.
+  if (!(await isArtworkPubliclyVisible(artworkId))) {
     return NextResponse.json({ error: "Artwork not found." }, { status: 404 });
   }
   if (artwork.status !== "available") {
