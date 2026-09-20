@@ -27,6 +27,7 @@ export function ApplicationRow({ artist }: { artist: ArtistView }) {
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [invite, setInvite] = useState<string | null>(null);
+  const [emailed, setEmailed] = useState<boolean | null>(null);
   const [copied, setCopied] = useState(false);
 
   function approve() {
@@ -36,6 +37,7 @@ export function ApplicationRow({ artist }: { artist: ArtistView }) {
       if (!res.ok) setError(res.error ?? "Could not approve.");
       else {
         setInvite(res.inviteUrl ?? null);
+        setEmailed(res.emailed ?? false);
         router.refresh();
       }
     });
@@ -59,7 +61,10 @@ export function ApplicationRow({ artist }: { artist: ArtistView }) {
     start(async () => {
       const res = await resendArtistInvite(artist.id);
       if (!res.ok) setError(res.error ?? "Could not create a new link.");
-      else setInvite(res.inviteUrl ?? null);
+      else {
+        setInvite(res.inviteUrl ?? null);
+        setEmailed(res.emailed ?? false);
+      }
     });
   }
 
@@ -207,12 +212,22 @@ export function ApplicationRow({ artist }: { artist: ArtistView }) {
       {invite ? (
         <div className="mt-4 ml-[88px] border border-brass/40 bg-brass/5 px-4 py-3">
           <div className="pb-2 font-mono text-label-sm tracking-rail text-brass uppercase">
-            Invite link — shown once
+            {emailed ? "Emailed — link shown once" : "Invite link — shown once"}
           </div>
           <p className="m-0 pb-3 text-body-sm leading-[1.6] text-bone-muted">
-            Send this to {artist.name}. It lets them set a password and sign in,
-            expires in 14 days, and cannot be shown again — make a new one if
-            it is lost.
+            {emailed ? (
+              <>
+                We have emailed this to {artist.email}. Keep a copy below in
+                case it does not arrive — it cannot be shown again, though you
+                can always make a new one.
+              </>
+            ) : (
+              <>
+                <span className="text-brass">The email did not go out</span> —
+                send this to {artist.name} yourself. It lets them set a
+                password, expires in 14 days, and cannot be shown again.
+              </>
+            )}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <code className="min-w-0 flex-1 basis-[280px] overflow-x-auto border border-bone/20 px-3 py-2 font-mono text-[12px] text-bone">

@@ -11,6 +11,12 @@ import {
   HeroSlide,
 } from "@kasityot/core";
 import { issueInvite, inviteUrl } from "@/lib/invite";
+import {
+  emailArtistInvite,
+  emailArtistRejection,
+  emailArtworkApproved,
+  emailArtworkRejected,
+} from "@/lib/notify";
 import { getSession } from "@/lib/auth";
 
 /**
@@ -30,6 +36,9 @@ export type ActionResult = { ok: boolean; error?: string };
 
 /** An approval also hands back a one-time invite link for the owner to pass on. */
 export type InviteResult = ActionResult & {
+  /** Whether the invite email actually went out; the link is returned either way. */
+  emailed?: boolean;
+  emailError?: string;
   inviteUrl?: string;
   expiresAt?: string;
 };
@@ -301,14 +310,26 @@ export async function approveArtistApplication(
   });
 
   const { token, expiresAt } = await issueInvite(id, artist.email as string);
+  const url = inviteUrl(token);
+
+  // The link is emailed, but also returned for the owner to pass on by hand.
+  // A send failure must not hide it: the invite has already been minted, and
+  // the artist is now expecting a link that only this response still holds.
+  const mail = await emailArtistInvite({
+    to: artist.email as string,
+    name: artist.name as string,
+    inviteUrl: url,
+  });
 
   revalidatePath("/applications");
   revalidatePath("/artists");
   return {
     ok: true,
-    inviteUrl: inviteUrl(token),
+    inviteUrl: url,
     // Surfaced so the owner can tell the artist how long the link lasts.
     expiresAt: expiresAt.toISOString(),
+    emailed: mail.sent,
+    emailError: mail.error,
   };
 }
 
@@ -327,6 +348,8 @@ export async function rejectArtistApplication(
     };
   }
 
+  const artist = await Artist.findById(id).select("email name").lean();
+
   await Artist.findByIdAndUpdate(id, {
     applicationStatus: "rejected",
     reviewNote: trimmed,
@@ -339,19 +362,29 @@ export async function rejectArtistApplication(
     { inviteTokenHash: null, inviteExpiresAt: null },
   );
 
+  // Best-effort, unlike the invite: the decision is recorded and visible in
+  // the panel, so a failed email costs a courtesy rather than losing anything.
+  if (artist?.email) {
+    await emailArtistRejection({
+      to: artist.email as string,
+      name: artist.name as string,
+      reason: trimmed,
+    });
+  }
+
   revalidatePath("/applications");
   revalidatePath("/artists");
   return { ok: true };
 }
 
 /** Fresh token, overwriting any previous one — the old link stops working. */
-export async function resendArtistInvite(
-  id: string,
-): Promise<ActionResult & { inviteUrl?: string }> {
+export async function resendArtistInvite(id: string): Promise<InviteResult> {
   await requireOwner();
   await connectDB();
 
-  const artist = await Artist.findById(id).select("email applicationStatus").lean();
+  const artist = await Artist.findById(id)
+    .select("email name applicationStatus")
+    .lean();
   if (!artist) return { ok: false, error: "That artist no longer exists." };
   if (artist.applicationStatus !== "approved") {
     return { ok: false, error: "Approve the application first." };
@@ -360,9 +393,23 @@ export async function resendArtistInvite(
     return { ok: false, error: "This artist has no email address." };
   }
 
-  const { token } = await issueInvite(id, artist.email as string);
+  const { token, expiresAt } = await issueInvite(id, artist.email as string);
+  const url = inviteUrl(token);
+
+  const mail = await emailArtistInvite({
+    to: artist.email as string,
+    name: artist.name as string,
+    inviteUrl: url,
+  });
+
   revalidatePath("/applications");
-  return { ok: true, inviteUrl: inviteUrl(token) };
+  return {
+    ok: true,
+    inviteUrl: url,
+    expiresAt: expiresAt.toISOString(),
+    emailed: mail.sent,
+    emailError: mail.error,
+  };
 }
 
 /* ---------------------------------------------------------------- *
@@ -379,7 +426,9 @@ export async function approveArtwork(id: string): Promise<ActionResult> {
   await requireOwner();
   await connectDB();
 
-  const art = await Artwork.findById(id).select("_id").lean();
+  const art = await Artwork.findById(id)
+    .select("title slug artistId submittedByArtist")
+    .lean();
   if (!art) return { ok: false, error: "That piece no longer exists." };
 
   await Artwork.findByIdAndUpdate(id, {
@@ -388,6 +437,21 @@ export async function approveArtwork(id: string): Promise<ActionResult> {
     reviewNote: "",
     reviewedAt: new Date(),
   });
+
+  // Only work the artist sent in: the owner does not need telling about their
+  // own pieces going live.
+  if (art.submittedByArtist) {
+    const artist = await Artist.findById(art.artistId).select("email name").lean();
+    if (artist?.email) {
+      const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+      await emailArtworkApproved({
+        to: artist.email as string,
+        name: artist.name as string,
+        title: art.title as string,
+        url: site ? `${site}/artworks/${art.slug}` : undefined,
+      });
+    }
+  }
 
   revalidatePath("/submissions");
   revalidatePath("/artworks");
@@ -409,11 +473,30 @@ export async function rejectArtwork(
     };
   }
 
+  const art = await Artwork.findById(id)
+    .select("title artistId submittedByArtist")
+    .lean();
+  if (!art) return { ok: false, error: "That piece no longer exists." };
+
   await Artwork.findByIdAndUpdate(id, {
     reviewStatus: "rejected",
     reviewNote: trimmed,
     reviewedAt: new Date(),
   });
+
+  // The note is the point of a rejection, so it goes to the artist rather than
+  // waiting for them to next open the studio.
+  if (art.submittedByArtist) {
+    const artist = await Artist.findById(art.artistId).select("email name").lean();
+    if (artist?.email) {
+      await emailArtworkRejected({
+        to: artist.email as string,
+        name: artist.name as string,
+        title: art.title as string,
+        reason: trimmed,
+      });
+    }
+  }
 
   revalidatePath("/submissions");
   revalidatePath("/artworks");
