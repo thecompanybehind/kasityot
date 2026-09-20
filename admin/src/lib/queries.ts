@@ -1,4 +1,12 @@
-import { connectDB, Artist, Artwork, Enquiry, HeroSlide, Order } from "@kasityot/core";
+import {
+  connectDB,
+  Artist,
+  ArtistUser,
+  Artwork,
+  Enquiry,
+  HeroSlide,
+  Order,
+} from "@kasityot/core";
 
 /**
  * Admin reads. Unlike the public site these deliberately include hidden
@@ -19,6 +27,15 @@ export type ArtistView = {
   videoUrl: string | null;
   status: "visible" | "hidden";
   artworkCount?: number;
+  applicationStatus: "pending" | "approved" | "rejected";
+  email: string | null;
+  phone: string | null;
+  reviewNote: string;
+  /** ISO strings: a Date cannot cross into a client component. */
+  reviewedAt: string | null;
+  createdAt: string | null;
+  /** Whether this artist has redeemed their invite and can sign in. */
+  hasLogin?: boolean;
 };
 
 export type ArtworkView = {
@@ -35,6 +52,14 @@ export type ArtworkView = {
   featured: boolean;
   artistId: string;
   artistName: string | null;
+  reviewStatus: "draft" | "pending" | "approved" | "rejected";
+  submittedByArtist: boolean;
+  submittedAt: string | null;
+  reviewNote: string;
+  reviewedAt: string | null;
+  /** True when an approved piece was edited and is awaiting re-approval. */
+  wasApproved: boolean;
+  proposedPrice: number | null;
 };
 
 export type EnquiryView = {
@@ -52,6 +77,11 @@ export type EnquiryView = {
 
 type Raw = Record<string, unknown>;
 
+/** Dates cannot cross into a client component, so they leave here as ISO. */
+function iso(v: unknown): string | null {
+  return v ? new Date(v as string).toISOString() : null;
+}
+
 function toArtist(doc: Raw): ArtistView {
   return {
     id: String(doc._id),
@@ -63,6 +93,15 @@ function toArtist(doc: Raw): ArtistView {
     story: doc.story as string,
     videoUrl: (doc.videoUrl as string) ?? null,
     status: doc.status as ArtistView["status"],
+    // Rows predating the review fields have no value; they read as approved,
+    // matching both the backfill and what the public site does.
+    applicationStatus:
+      (doc.applicationStatus as ArtistView["applicationStatus"]) ?? "approved",
+    email: (doc.email as string) ?? null,
+    phone: (doc.phone as string) ?? null,
+    reviewNote: (doc.reviewNote as string) ?? "",
+    reviewedAt: iso(doc.reviewedAt),
+    createdAt: iso(doc.createdAt),
   };
 }
 
@@ -83,6 +122,14 @@ function toArtwork(doc: Raw): ArtworkView {
     featured: Boolean(doc.featured),
     artistId: populated ? String(a._id) : String(doc.artistId),
     artistName: populated ? (a.name as string) : null,
+    reviewStatus:
+      (doc.reviewStatus as ArtworkView["reviewStatus"]) ?? "approved",
+    submittedByArtist: Boolean(doc.submittedByArtist),
+    submittedAt: iso(doc.submittedAt),
+    reviewNote: (doc.reviewNote as string) ?? "",
+    reviewedAt: iso(doc.reviewedAt),
+    wasApproved: Boolean(doc.wasApproved),
+    proposedPrice: (doc.proposedPrice as number) ?? null,
   };
 }
 
@@ -107,16 +154,121 @@ function toEnquiry(doc: Raw): EnquiryView {
 
 export async function getDashboardStats() {
   await connectDB();
-  const [artworks, artists, newEnquiries, paidOrders, available, sold] =
-    await Promise.all([
-      Artwork.countDocuments(),
-      Artist.countDocuments(),
-      Enquiry.countDocuments({ status: "new" }),
-      Order.countDocuments({ status: "paid" }),
-      Artwork.countDocuments({ status: "available" }),
-      Artwork.countDocuments({ status: "sold" }),
-    ]);
-  return { artworks, artists, newEnquiries, paidOrders, available, sold };
+  const [
+    artworks,
+    artists,
+    newEnquiries,
+    paidOrders,
+    available,
+    sold,
+    pendingApplications,
+    pendingSubmissions,
+  ] = await Promise.all([
+    Artwork.countDocuments(),
+    Artist.countDocuments(),
+    Enquiry.countDocuments({ status: "new" }),
+    Order.countDocuments({ status: "paid" }),
+    Artwork.countDocuments({ status: "available" }),
+    Artwork.countDocuments({ status: "sold" }),
+    // Surfaced on the dashboard and in the nav: an unnoticed queue is the
+    // main failure mode of a design where nothing goes live without review.
+    Artist.countDocuments({ applicationStatus: "pending" }),
+    Artwork.countDocuments({ reviewStatus: "pending" }),
+  ]);
+  return {
+    artworks,
+    artists,
+    newEnquiries,
+    paidOrders,
+    available,
+    sold,
+    pendingApplications,
+    pendingSubmissions,
+  };
+}
+
+/**
+ * The two queue counts for the nav badge, on every page.
+ *
+ * Its own small query rather than a slice of getDashboardStats: every page
+ * calls this, and none of them needs the other six counts.
+ */
+export async function getQueueCounts(): Promise<{
+  applications: number;
+  submissions: number;
+}> {
+  await connectDB();
+  const [applications, submissions] = await Promise.all([
+    Artist.countDocuments({ applicationStatus: "pending" }),
+    Artwork.countDocuments({ reviewStatus: "pending" }),
+  ]);
+  return { applications, submissions };
+}
+
+/**
+ * Artist applications, newest first, with pending ahead of everything else so
+ * the owner sees what needs a decision without filtering.
+ */
+export async function getApplications(
+  status?: "pending" | "approved" | "rejected",
+): Promise<ArtistView[]> {
+  await connectDB();
+
+  // Only artists who actually applied; ones the owner created by hand have no
+  // email and never entered this queue.
+  const query: Record<string, unknown> = status
+    ? { applicationStatus: status }
+    : { email: { $ne: null } };
+
+  const docs = await Artist.find(query)
+    .sort({ applicationStatus: 1, createdAt: -1 })
+    .lean();
+
+  const views = docs.map(toArtist);
+
+  // Whether each one has redeemed their invite, so the owner can tell "waiting
+  // on them" from "waiting on me".
+  const users = await ArtistUser.find({
+    artistId: { $in: docs.map((d) => d._id) },
+  })
+    .select("artistId passwordHash")
+    .lean();
+  const redeemed = new Set(
+    users.filter((u) => u.passwordHash).map((u) => String(u.artistId)),
+  );
+
+  return views.map((v) => ({ ...v, hasLogin: redeemed.has(v.id) }));
+}
+
+/** One application, with the same login flag as the listing. */
+export async function getApplication(id: string): Promise<ArtistView | null> {
+  await connectDB();
+  const doc = await Artist.findById(id).lean();
+  if (!doc) return null;
+  const user = await ArtistUser.findOne({ artistId: id })
+    .select("passwordHash")
+    .lean();
+  return { ...toArtist(doc), hasLogin: Boolean(user?.passwordHash) };
+}
+
+/**
+ * Artwork awaiting review. Pieces that were live and have since been edited
+ * sort first: they are off the public site until approved, so they cost the
+ * owner a listing every hour they sit here.
+ */
+export async function getSubmissions(
+  status?: "pending" | "approved" | "rejected",
+): Promise<ArtworkView[]> {
+  await connectDB();
+  const query: Record<string, unknown> = status
+    ? { reviewStatus: status }
+    : { reviewStatus: "pending" };
+
+  const docs = await Artwork.find(query)
+    .populate("artistId", "name")
+    .sort({ wasApproved: -1, submittedAt: 1 })
+    .lean();
+  return docs.map(toArtwork);
 }
 
 export async function getRecentEnquiries(limit = 5): Promise<EnquiryView[]> {

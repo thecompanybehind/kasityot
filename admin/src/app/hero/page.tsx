@@ -3,17 +3,18 @@ import { AdminShell } from "@/components/AdminShell";
 import { HeroSlideRow } from "@/components/HeroSlideRow";
 import { ButtonLink, Empty, PageHeading, Rule } from "@/components/ui";
 import { getSession } from "@/lib/auth";
-import { getHeroSlides } from "@/lib/queries";
+import { getQueueCounts, getHeroSlides } from "@/lib/queries";
 
 export default async function HeroPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+  const queues = await getQueueCounts();
 
   const slides = await getHeroSlides();
   const visible = slides.filter((s) => s.status === "visible").length;
 
   return (
-    <AdminShell email={session.email}>
+    <AdminShell email={session.email} queues={queues}>
       <PageHeading
         eyebrow={`${visible} showing on the site`}
         title="Home banner"

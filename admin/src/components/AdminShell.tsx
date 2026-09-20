@@ -8,15 +8,28 @@ const NAV = [
   { label: "Dashboard", href: "/" },
   { label: "Artworks", href: "/artworks" },
   { label: "Artists", href: "/artists" },
+  { label: "Applications", href: "/applications", badge: "applications" },
+  { label: "Submissions", href: "/submissions", badge: "submissions" },
   { label: "Banner", href: "/hero" },
   { label: "Enquiries", href: "/enquiries" },
-];
+] as const;
+
+/**
+ * Counts for the two review queues.
+ *
+ * Nothing an artist does reaches the public site until the owner acts, so a
+ * queue nobody notices is this design's main failure mode — the count rides
+ * in the nav on every page rather than only on the dashboard.
+ */
+export type QueueCounts = { applications: number; submissions: number };
 
 export function AdminShell({
   email,
+  queues,
   children,
 }: {
   email: string;
+  queues?: QueueCounts;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -44,19 +57,28 @@ export function AdminShell({
           </div>
 
           <nav className="hidden flex-wrap gap-7 font-mono text-label tracking-nav uppercase md:flex">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`transition-colors duration-200 ${
-                  isActive(item.href)
-                    ? "text-brass"
-                    : "text-bone hover:text-brass"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {NAV.map((item) => {
+              const count =
+                "badge" in item && queues ? queues[item.badge] : 0;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2 transition-colors duration-200 ${
+                    isActive(item.href)
+                      ? "text-brass"
+                      : "text-bone hover:text-brass"
+                  }`}
+                >
+                  {item.label}
+                  {count > 0 ? (
+                    <span className="grid min-w-4.5 place-items-center rounded-pill bg-brass px-1.5 py-0.5 text-label leading-none text-ink">
+                      {count}
+                    </span>
+                  ) : null}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="flex items-center gap-4">
@@ -92,18 +114,26 @@ export function AdminShell({
         </div>
 
         <nav hidden={!open} className="border-t border-brass/20 md:hidden">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className={`block border-b border-bone/12 px-[clamp(20px,4vw,44px)] py-4 font-display text-[24px] leading-none last:border-b-0 ${
-                isActive(item.href) ? "text-brass" : "text-cream"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) => {
+            const count = "badge" in item && queues ? queues[item.badge] : 0;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={`flex items-center justify-between gap-3 border-b border-bone/12 px-[clamp(20px,4vw,44px)] py-4 font-display text-[24px] leading-none last:border-b-0 ${
+                  isActive(item.href) ? "text-brass" : "text-cream"
+                }`}
+              >
+                {item.label}
+                {count > 0 ? (
+                  <span className="grid min-w-6 place-items-center rounded-pill bg-brass px-2 py-1 font-mono text-label leading-none text-ink">
+                    {count}
+                  </span>
+                ) : null}
+              </Link>
+            );
+          })}
         </nav>
       </header>
 

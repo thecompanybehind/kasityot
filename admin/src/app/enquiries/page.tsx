@@ -4,7 +4,7 @@ import { EnquiryCard } from "@/components/EnquiryCard";
 import { EnquiryFilters } from "@/components/EnquiryFilters";
 import { Empty, PageHeading, Rule } from "@/components/ui";
 import { getSession } from "@/lib/auth";
-import { getArtworkOptions, getEnquiries } from "@/lib/queries";
+import { getQueueCounts, getArtworkOptions, getEnquiries } from "@/lib/queries";
 
 export default async function EnquiriesPage({
   searchParams,
@@ -13,6 +13,7 @@ export default async function EnquiriesPage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
+  const queues = await getQueueCounts();
 
   const sp = await searchParams;
   const [enquiries, artworks] = await Promise.all([
@@ -26,7 +27,7 @@ export default async function EnquiriesPage({
   const filtered = Boolean(sp.status || sp.artwork);
 
   return (
-    <AdminShell email={session.email}>
+    <AdminShell email={session.email} queues={queues}>
       <PageHeading
         eyebrow={`${enquiries.length} ${enquiries.length === 1 ? "enquiry" : "enquiries"}`}
         title="Enquiry inbox"

@@ -5,7 +5,7 @@ import { ArtworkRow } from "@/components/ArtworkRow";
 import { ArtworkSearch } from "@/components/ArtworkSearch";
 import { ButtonLink, Empty, PageHeading, Rule } from "@/components/ui";
 import { getSession } from "@/lib/auth";
-import { getArtistOptions, getArtworks } from "@/lib/queries";
+import { getQueueCounts, getArtistOptions, getArtworks } from "@/lib/queries";
 
 export default async function ArtworksPage({
   searchParams,
@@ -14,6 +14,7 @@ export default async function ArtworksPage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
+  const queues = await getQueueCounts();
 
   const sp = await searchParams;
   const [artworks, artists] = await Promise.all([
@@ -28,7 +29,7 @@ export default async function ArtworksPage({
   const filtered = Boolean(sp.q || sp.status || sp.artist);
 
   return (
-    <AdminShell email={session.email}>
+    <AdminShell email={session.email} queues={queues}>
       <PageHeading
         eyebrow={`${artworks.length} ${artworks.length === 1 ? "piece" : "pieces"}`}
         title="Artworks"

@@ -64,6 +64,12 @@ export function StatusPill({ status }: { status: string }) {
     new: "border-brass text-brass",
     contacted: "border-bone/30 text-bone-soft",
     closed: "border-bone/20 text-slate",
+    // Review states. Pending is the only one calling for the owner to act,
+    // so it is the only one that fills rather than outlines.
+    pending: "border-brass bg-brass/15 text-brass",
+    approved: "border-brass/50 text-brass",
+    rejected: "border-bone/25 text-slate",
+    draft: "border-bone/20 text-slate-dim",
   };
   return (
     <span

@@ -3,7 +3,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { ArtworkForm } from "@/components/ArtworkForm";
 import { PageHeading, Rule } from "@/components/ui";
 import { getSession } from "@/lib/auth";
-import { getArtistOptions, getArtwork } from "@/lib/queries";
+import { getQueueCounts, getArtistOptions, getArtwork } from "@/lib/queries";
 
 export default async function EditArtworkPage({
   params,
@@ -12,6 +12,7 @@ export default async function EditArtworkPage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
+  const queues = await getQueueCounts();
 
   const { id } = await params;
   const [artwork, artists] = await Promise.all([
@@ -21,7 +22,7 @@ export default async function EditArtworkPage({
   if (!artwork) notFound();
 
   return (
-    <AdminShell email={session.email}>
+    <AdminShell email={session.email} queues={queues}>
       <PageHeading eyebrow="Editing" title={artwork.title} />
       <Rule />
       <div className="pt-8">

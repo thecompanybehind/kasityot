@@ -2,7 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { connectDB, Artist, Artwork, Enquiry, HeroSlide } from "@kasityot/core";
+import {
+  connectDB,
+  Artist,
+  ArtistUser,
+  Artwork,
+  Enquiry,
+  HeroSlide,
+} from "@kasityot/core";
+import { issueInvite, inviteUrl } from "@/lib/invite";
 import { getSession } from "@/lib/auth";
 
 /**
@@ -19,6 +27,12 @@ async function requireOwner() {
 }
 
 export type ActionResult = { ok: boolean; error?: string };
+
+/** An approval also hands back a one-time invite link for the owner to pass on. */
+export type InviteResult = ActionResult & {
+  inviteUrl?: string;
+  expiresAt?: string;
+};
 
 /** URL-safe slug, uniquified against the collection it belongs to. */
 async function uniqueSlug(
@@ -83,6 +97,9 @@ export async function saveArtist(
   try {
     if (id) {
       const slug = await uniqueSlug(name, Artist, id);
+      // Editing here does not approve an applicant: approval mints an invite
+      // and is its own deliberate step on the applications page. The owner
+      // may well want to tidy an application up before deciding on it.
       await Artist.findByIdAndUpdate(id, { ...data, slug });
     } else {
       const slug = await uniqueSlug(name, Artist);
@@ -199,7 +216,15 @@ export async function saveArtwork(
       // findByIdAndUpdate skips schema validation by default.
       await Artwork.findByIdAndUpdate(
         id,
-        { ...data, slug },
+        {
+          ...data,
+          slug,
+          // The owner editing a piece is itself the approval, so a submission
+          // they fix up goes live rather than staying in their own queue.
+          reviewStatus: "approved",
+          wasApproved: false,
+          reviewNote: "",
+        },
         { runValidators: true },
       );
     } else {
@@ -239,6 +264,158 @@ export async function setArtworkStatus(
   await requireOwner();
   await connectDB();
   await Artwork.findByIdAndUpdate(id, { status });
+  revalidatePath("/artworks");
+  return { ok: true };
+}
+
+/* ---------------------------------------------------------------- *
+ * Artist applications
+ * ---------------------------------------------------------------- */
+
+/**
+ * Approving an application also mints the artist's invite.
+ *
+ * The raw token is returned to the caller exactly once and never stored: only
+ * its hash goes to the database, so a later read of that row — a backup, a
+ * support query, a leak — cannot be turned into a working login.
+ */
+export async function approveArtistApplication(
+  id: string,
+): Promise<InviteResult> {
+  await requireOwner();
+  await connectDB();
+
+  const artist = await Artist.findById(id).select("email name").lean();
+  if (!artist) return { ok: false, error: "That application no longer exists." };
+  if (!artist.email) {
+    return {
+      ok: false,
+      error: "This artist has no email address, so they cannot be invited.",
+    };
+  }
+
+  await Artist.findByIdAndUpdate(id, {
+    applicationStatus: "approved",
+    reviewNote: "",
+    reviewedAt: new Date(),
+  });
+
+  const { token, expiresAt } = await issueInvite(id, artist.email as string);
+
+  revalidatePath("/applications");
+  revalidatePath("/artists");
+  return {
+    ok: true,
+    inviteUrl: inviteUrl(token),
+    // Surfaced so the owner can tell the artist how long the link lasts.
+    expiresAt: expiresAt.toISOString(),
+  };
+}
+
+export async function rejectArtistApplication(
+  id: string,
+  note: string,
+): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+
+  const trimmed = note.trim();
+  if (!trimmed) {
+    return {
+      ok: false,
+      error: "Give a reason — the artist is shown this, so it should help them.",
+    };
+  }
+
+  await Artist.findByIdAndUpdate(id, {
+    applicationStatus: "rejected",
+    reviewNote: trimmed,
+    reviewedAt: new Date(),
+  });
+
+  // A rejected artist must not keep a usable login if they had one.
+  await ArtistUser.findOneAndUpdate(
+    { artistId: id },
+    { inviteTokenHash: null, inviteExpiresAt: null },
+  );
+
+  revalidatePath("/applications");
+  revalidatePath("/artists");
+  return { ok: true };
+}
+
+/** Fresh token, overwriting any previous one — the old link stops working. */
+export async function resendArtistInvite(
+  id: string,
+): Promise<ActionResult & { inviteUrl?: string }> {
+  await requireOwner();
+  await connectDB();
+
+  const artist = await Artist.findById(id).select("email applicationStatus").lean();
+  if (!artist) return { ok: false, error: "That artist no longer exists." };
+  if (artist.applicationStatus !== "approved") {
+    return { ok: false, error: "Approve the application first." };
+  }
+  if (!artist.email) {
+    return { ok: false, error: "This artist has no email address." };
+  }
+
+  const { token } = await issueInvite(id, artist.email as string);
+  revalidatePath("/applications");
+  return { ok: true, inviteUrl: inviteUrl(token) };
+}
+
+/* ---------------------------------------------------------------- *
+ * Artwork submissions
+ * ---------------------------------------------------------------- */
+
+/**
+ * Approving a submission puts it on the public site.
+ *
+ * wasApproved is cleared because it exists only to mark "was live, now
+ * awaiting re-approval" — once approved again the distinction is spent.
+ */
+export async function approveArtwork(id: string): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+
+  const art = await Artwork.findById(id).select("_id").lean();
+  if (!art) return { ok: false, error: "That piece no longer exists." };
+
+  await Artwork.findByIdAndUpdate(id, {
+    reviewStatus: "approved",
+    wasApproved: false,
+    reviewNote: "",
+    reviewedAt: new Date(),
+  });
+
+  revalidatePath("/submissions");
+  revalidatePath("/artworks");
+  return { ok: true };
+}
+
+export async function rejectArtwork(
+  id: string,
+  note: string,
+): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+
+  const trimmed = note.trim();
+  if (!trimmed) {
+    return {
+      ok: false,
+      error: "Give a reason — the artist is shown this, so it should help them.",
+    };
+  }
+
+  await Artwork.findByIdAndUpdate(id, {
+    reviewStatus: "rejected",
+    reviewNote: trimmed,
+    reviewedAt: new Date(),
+  });
+
+  revalidatePath("/submissions");
   revalidatePath("/artworks");
   return { ok: true };
 }

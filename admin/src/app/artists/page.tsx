@@ -3,16 +3,17 @@ import { AdminShell } from "@/components/AdminShell";
 import { ArtistRow } from "@/components/ArtistRow";
 import { ButtonLink, Empty, PageHeading, Rule } from "@/components/ui";
 import { getSession } from "@/lib/auth";
-import { getArtists } from "@/lib/queries";
+import { getQueueCounts, getArtists } from "@/lib/queries";
 
 export default async function ArtistsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+  const queues = await getQueueCounts();
 
   const artists = await getArtists();
 
   return (
-    <AdminShell email={session.email}>
+    <AdminShell email={session.email} queues={queues}>
       <PageHeading
         eyebrow={`${artists.length} ${artists.length === 1 ? "artist" : "artists"}`}
         title="Artists"

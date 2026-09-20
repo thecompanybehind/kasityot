@@ -4,7 +4,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { Empty, PageHeading, Rule, StatusPill } from "@/components/ui";
 import { getSession } from "@/lib/auth";
 import { timeAgo } from "@/lib/format";
-import { getDashboardStats, getRecentEnquiries } from "@/lib/queries";
+import { getQueueCounts, getDashboardStats, getRecentEnquiries } from "@/lib/queries";
 
 function Stat({
   label,
@@ -39,6 +39,7 @@ function Stat({
 export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+  const queues = await getQueueCounts();
 
   const [stats, recent] = await Promise.all([
     getDashboardStats(),
@@ -46,20 +47,37 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <AdminShell email={session.email}>
+    <AdminShell email={session.email} queues={queues}>
       <PageHeading eyebrow="Overview" title="Dashboard" />
       <Rule />
 
+      {/* The two review queues lead: nothing an artist does reaches the site
+          until the owner acts on them. */}
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,190px),1fr))] gap-5 pt-8">
-        <Stat label="Artworks" value={stats.artworks} href="/artworks" />
-        <Stat label="Artists" value={stats.artists} href="/artists" />
+        <Stat
+          label="Applications"
+          value={stats.pendingApplications}
+          href="/applications?status=pending"
+          accent={stats.pendingApplications > 0}
+        />
+        <Stat
+          label="To review"
+          value={stats.pendingSubmissions}
+          href="/submissions"
+          accent={stats.pendingSubmissions > 0}
+        />
         <Stat
           label="New enquiries"
           value={stats.newEnquiries}
           href="/enquiries?status=new"
-          accent
+          accent={stats.newEnquiries > 0}
         />
         <Stat label="Paid orders" value={stats.paidOrders} href="/artworks" />
+      </div>
+
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,190px),1fr))] gap-5 pt-5">
+        <Stat label="Artworks" value={stats.artworks} href="/artworks" />
+        <Stat label="Artists" value={stats.artists} href="/artists" />
       </div>
 
       <div className="flex flex-wrap gap-6 pt-6 font-mono text-label-sm tracking-rail text-slate uppercase">
