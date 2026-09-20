@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/Button";
 import { Media } from "@/components/ui/Media";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { getArtists, getFeaturedArtworks } from "@/lib/queries";
+import { HeroCarousel } from "@/components/HeroCarousel";
+import { getArtists, getFeaturedArtworks, getHeroSlides } from "@/lib/queries";
+
+/**
+ * The home page reads the banner, featured artworks and artists from the
+ * database. Without this it would be baked at build time and the owner's
+ * changes in the admin panel would never appear until the next deploy.
+ */
+export const revalidate = 60;
 
 /** The underlined mono link used opposite section headings. */
 function RailLink({ href, children }: { href: string; children: string }) {
@@ -20,9 +28,10 @@ function RailLink({ href, children }: { href: string; children: string }) {
 }
 
 export default async function Home() {
-  const [artworks, artists] = await Promise.all([
+  const [artworks, artists, heroSlides] = await Promise.all([
     getFeaturedArtworks(6),
     getArtists(),
+    getHeroSlides(),
   ]);
 
   // The maker-in-residence block features whichever artist has a story to
@@ -32,54 +41,7 @@ export default async function Home() {
 
   return (
     <>
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <section
-        id="top"
-        className="relative grid min-h-[min(92vh,900px)] items-end overflow-hidden bg-ink-raised"
-      >
-        <div className="absolute inset-0 animate-fade">
-          <Media
-            src="/design/a7cbff28-f98a-4d87-b8e1-ff3b89c4275c.jpg"
-            alt="An artist at work"
-            sizes="100vw"
-            priority
-          />
-        </div>
-        <div className="absolute inset-0 bg-linear-to-t from-ink-overlay/92 via-ink-overlay/55 via-36% to-ink-overlay/45" />
-        <div className="absolute inset-0 opacity-22 [background:repeating-linear-gradient(112deg,rgba(255,255,255,0.045)_0_1px,transparent_1px_4px)]" />
-
-        <div className="relative flex animate-rise flex-col gap-[clamp(30px,4vw,56px)] px-(--spacing-section-x) pt-[clamp(44px,6vw,96px)] pb-[clamp(30px,3vw,48px)]">
-          <div className="flex max-w-[min(100%,1060px)] flex-col gap-6.5">
-            <div className="flex items-center gap-4 font-mono text-label tracking-wider text-brass uppercase">
-              <span className="block h-px w-[34px] bg-brass" />
-              <span>Handmade in India</span>
-            </div>
-            <h1 className="m-0 font-display text-hero leading-[0.82] font-light tracking-hero text-balance text-cream">
-              The hand,
-              <br />
-              <em className="italic text-brass-light">unhurried.</em>
-            </h1>
-            <p className="m-0 max-w-[44ch] text-lede leading-[1.75] text-pretty text-bone-soft">
-              Objects made slowly, by people we know by name. Signed,
-              traceable, and meant to outlive their first owner.
-            </p>
-            <div className="flex flex-wrap gap-3.5 pt-2.5">
-              <Button href="/artworks">View the full collection</Button>
-              <Button href="/artists" variant="secondary">
-                Meet the artists
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-end justify-between gap-[clamp(18px,4vw,60px)] border-t border-brass/42 pt-5.5 font-mono text-label tracking-rail text-stone uppercase">
-            <span>Every piece one of a kind</span>
-            <div className="flex flex-wrap gap-[clamp(18px,3vw,44px)] text-brass">
-              <span>{artists.length} artists</span>
-              <span>{artworks.length ? "Never a series" : "Newly opened"}</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroCarousel slides={heroSlides} artistCount={artists.length} />
 
       {/* ── I. Artworks ──────────────────────────────────────── */}
       <section

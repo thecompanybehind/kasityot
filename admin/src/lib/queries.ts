@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/db";
 import { Artist } from "@/models/Artist";
 import { Artwork } from "@/models/Artwork";
 import { Enquiry } from "@/models/Enquiry";
+import { HeroSlide } from "@/models/HeroSlide";
 import { Order } from "@/models/Order";
 
 /**
@@ -204,4 +205,54 @@ export async function getArtistOptions() {
   await connectDB();
   const docs = await Artist.find().select("_id name").sort({ name: 1 }).lean();
   return docs.map((d) => ({ id: String(d._id), name: d.name as string }));
+}
+
+/* ---------------------------------------------------------------- *
+ * Hero banner
+ * ---------------------------------------------------------------- */
+
+export type HeroSlideView = {
+  id: string;
+  image: string;
+  alt: string;
+  eyebrow: string;
+  heading: string;
+  headingAccent: string;
+  subtext: string;
+  order: number;
+  status: "visible" | "hidden";
+};
+
+/** Admin listing: includes hidden slides, in the owner's order. */
+export async function getHeroSlides(): Promise<HeroSlideView[]> {
+  await connectDB();
+  const docs = await HeroSlide.find().sort({ order: 1, createdAt: 1 }).lean();
+  return docs.map((d) => ({
+    id: String(d._id),
+    image: d.image as string,
+    alt: (d.alt as string) ?? "",
+    eyebrow: (d.eyebrow as string) ?? "",
+    heading: (d.heading as string) ?? "",
+    headingAccent: (d.headingAccent as string) ?? "",
+    subtext: (d.subtext as string) ?? "",
+    order: (d.order as number) ?? 0,
+    status: d.status as HeroSlideView["status"],
+  }));
+}
+
+export async function getHeroSlide(id: string): Promise<HeroSlideView | null> {
+  await connectDB();
+  const d = await HeroSlide.findById(id).lean();
+  if (!d) return null;
+  return {
+    id: String(d._id),
+    image: d.image as string,
+    alt: (d.alt as string) ?? "",
+    eyebrow: (d.eyebrow as string) ?? "",
+    heading: (d.heading as string) ?? "",
+    headingAccent: (d.headingAccent as string) ?? "",
+    subtext: (d.subtext as string) ?? "",
+    order: (d.order as number) ?? 0,
+    status: d.status as HeroSlideView["status"],
+  };
 }

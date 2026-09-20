@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/db";
 import { Artist } from "@/models/Artist";
 import { Artwork } from "@/models/Artwork";
 import { Enquiry } from "@/models/Enquiry";
+import { HeroSlide } from "@/models/HeroSlide";
 import { Order } from "@/models/Order";
 
 /**
@@ -320,4 +321,56 @@ export async function getEnquiries(filters?: {
     .sort({ createdAt: -1 })
     .lean();
   return docs.map(toEnquiry);
+}
+
+/* ---------------------------------------------------------------- *
+ * Hero banner
+ * ---------------------------------------------------------------- */
+
+export type HeroSlideView = {
+  id: string;
+  image: string;
+  alt: string;
+  eyebrow: string;
+  heading: string;
+  headingAccent: string;
+  subtext: string;
+};
+
+/** The approved design's own hero copy, used when a field is left blank. */
+export const HERO_DEFAULTS = {
+  image: "/design/a7cbff28-f98a-4d87-b8e1-ff3b89c4275c.jpg",
+  alt: "An artist at work",
+  eyebrow: "Handmade in India",
+  heading: "The hand,",
+  headingAccent: "unhurried.",
+  subtext:
+    "Objects made slowly, by people we know by name. Signed, traceable, and meant to outlive their first owner.",
+};
+
+/**
+ * Visible slides in the owner's order. Returns the design default when the
+ * owner has not added any, so the hero is never empty.
+ */
+export async function getHeroSlides(): Promise<HeroSlideView[]> {
+  await connectDB();
+  const docs = await HeroSlide.find({ status: "visible" })
+    .sort({ order: 1, createdAt: 1 })
+    .lean();
+
+  if (!docs.length) {
+    return [{ id: "default", ...HERO_DEFAULTS }];
+  }
+
+  return docs.map((d) => ({
+    id: String(d._id),
+    image: d.image as string,
+    alt: (d.alt as string) || HERO_DEFAULTS.alt,
+    // Each field falls back independently: a slide may override only the
+    // heading and keep the rest of the design's copy.
+    eyebrow: (d.eyebrow as string) || HERO_DEFAULTS.eyebrow,
+    heading: (d.heading as string) || HERO_DEFAULTS.heading,
+    headingAccent: (d.headingAccent as string) || HERO_DEFAULTS.headingAccent,
+    subtext: (d.subtext as string) || HERO_DEFAULTS.subtext,
+  }));
 }

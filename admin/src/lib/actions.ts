@@ -7,6 +7,7 @@ import { getSession } from "@/lib/auth";
 import { Artist } from "@/models/Artist";
 import { Artwork } from "@/models/Artwork";
 import { Enquiry } from "@/models/Enquiry";
+import { HeroSlide } from "@/models/HeroSlide";
 
 /**
  * Every mutation the owner can perform.
@@ -269,5 +270,96 @@ export async function saveEnquiryNotes(
   await connectDB();
   await Enquiry.findByIdAndUpdate(id, { ownerNotes: notes });
   revalidatePath("/enquiries");
+  return { ok: true };
+}
+
+/* ---------------------------------------------------------------- *
+ * Hero banner
+ * ---------------------------------------------------------------- */
+
+export async function saveHeroSlide(
+  id: string | null,
+  form: FormData,
+): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+
+  const image = str(form, "image");
+  if (!image) return { ok: false, error: "Upload a banner image first." };
+
+  const data = {
+    image,
+    alt: str(form, "alt"),
+    // Blank means "use the design's default copy" — the public hero falls
+    // back per field, so these are stored as empty rather than rejected.
+    eyebrow: str(form, "eyebrow"),
+    heading: str(form, "heading"),
+    headingAccent: str(form, "headingAccent"),
+    subtext: str(form, "subtext"),
+    status: (str(form, "status") || "visible") as "visible" | "hidden",
+  };
+
+  try {
+    if (id) {
+      await HeroSlide.findByIdAndUpdate(id, data);
+    } else {
+      // New slides go to the end of the running order.
+      const last = await HeroSlide.findOne().sort({ order: -1 }).lean();
+      const order = ((last?.order as number) ?? -1) + 1;
+      await HeroSlide.create({ ...data, order });
+    }
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
+  }
+
+  revalidatePath("/hero");
+  return { ok: true };
+}
+
+export async function deleteHeroSlide(id: string): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+  await HeroSlide.findByIdAndDelete(id);
+  revalidatePath("/hero");
+  return { ok: true };
+}
+
+export async function setHeroSlideStatus(
+  id: string,
+  status: "visible" | "hidden",
+): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+  await HeroSlide.findByIdAndUpdate(id, { status });
+  revalidatePath("/hero");
+  return { ok: true };
+}
+
+/**
+ * Swaps a slide with its neighbour. Order values are rewritten for the
+ * whole list afterwards so gaps from deletes never accumulate.
+ */
+export async function moveHeroSlide(
+  id: string,
+  direction: "up" | "down",
+): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+
+  const slides = await HeroSlide.find().sort({ order: 1, createdAt: 1 }).lean();
+  const i = slides.findIndex((s) => String(s._id) === id);
+  if (i < 0) return { ok: false, error: "That banner no longer exists." };
+
+  const j = direction === "up" ? i - 1 : i + 1;
+  if (j < 0 || j >= slides.length) return { ok: true };
+
+  const reordered = [...slides];
+  [reordered[i], reordered[j]] = [reordered[j], reordered[i]];
+
+  await Promise.all(
+    reordered.map((s, n) => HeroSlide.findByIdAndUpdate(s._id, { order: n })),
+  );
+
+  revalidatePath("/hero");
   return { ok: true };
 }
