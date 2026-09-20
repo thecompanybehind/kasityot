@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# npm workspaces hoist to the root; per-app lockfiles would drift.
+/admin/package-lock.json
+/client/package-lock.json
+/packages/*/package-lock.json

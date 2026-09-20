@@ -14,6 +14,7 @@ export { connectDB } from "./db";
 
 export { Artist, type ArtistDoc } from "./models/Artist";
 export { Artwork, type ArtworkDoc } from "./models/Artwork";
+export { ArtistUser, type ArtistUserDoc } from "./models/ArtistUser";
 export { Enquiry, type EnquiryDoc } from "./models/Enquiry";
 export { HeroSlide, type HeroSlideDoc } from "./models/HeroSlide";
 export { Order, type OrderDoc } from "./models/Order";

@@ -1,0 +1,10 @@
+{
+  "name": "kasityot-monorepo",
+  "private": true,
+  "description": "Public site, owner panel, artist studio, and the schema they share.",
+  "workspaces": [
+    "packages/*",
+    "client",
+    "admin"
+  ]
+}
