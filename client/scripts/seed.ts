@@ -9,11 +9,7 @@ import mongoose from "mongoose";
 
 config({ path: ".env.local", quiet: true });
 
-import { connectDB } from "../src/lib/db";
-import { Artist } from "../src/models/Artist";
-import { Artwork } from "../src/models/Artwork";
-import { Enquiry } from "../src/models/Enquiry";
-import { Order } from "../src/models/Order";
+import { connectDB, Artist, Artwork, Enquiry, Order } from "@kasityot/core";
 import { seedArtists, seedArtworks } from "../src/lib/seed-data";
 
 async function main() {

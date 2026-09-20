@@ -2,12 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { connectDB } from "@/lib/db";
+import { connectDB, Artist, Artwork, Enquiry, HeroSlide } from "@kasityot/core";
 import { getSession } from "@/lib/auth";
-import { Artist } from "@/models/Artist";
-import { Artwork } from "@/models/Artwork";
-import { Enquiry } from "@/models/Enquiry";
-import { HeroSlide } from "@/models/HeroSlide";
 
 /**
  * Every mutation the owner can perform.

@@ -1,9 +1,4 @@
-import { connectDB } from "@/lib/db";
-import { Artist } from "@/models/Artist";
-import { Artwork } from "@/models/Artwork";
-import { Enquiry } from "@/models/Enquiry";
-import { HeroSlide } from "@/models/HeroSlide";
-import { Order } from "@/models/Order";
+import { connectDB, Artist, Artwork, Enquiry, HeroSlide, Order } from "@kasityot/core";
 
 /**
  * Read helpers shared by the public site and the admin panel.

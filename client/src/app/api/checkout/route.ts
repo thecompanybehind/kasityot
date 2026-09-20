@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
-import { connectDB } from "@/lib/db";
-import { Artwork } from "@/models/Artwork";
-import { Order } from "@/models/Order";
+import { connectDB, Artwork, Order } from "@kasityot/core";
 
 /**
  * Creates a Razorpay order server side and records our own Order row.

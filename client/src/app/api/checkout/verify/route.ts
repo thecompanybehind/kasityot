@@ -1,9 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
+import { connectDB, Artwork, Order } from "@kasityot/core";
 import { notifyPaidOrder } from "@/lib/notify";
-import { Artwork } from "@/models/Artwork";
-import { Order } from "@/models/Order";
 
 /**
  * Verifies a Razorpay payment signature and, only if it is genuine, marks

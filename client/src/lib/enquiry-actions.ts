@@ -1,11 +1,9 @@
 "use server";
 
 import { headers } from "next/headers";
-import { connectDB } from "@/lib/db";
+import { connectDB, Artwork, Enquiry } from "@kasityot/core";
 import { notifyNewEnquiry } from "@/lib/notify";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
-import { Artwork } from "@/models/Artwork";
-import { Enquiry } from "@/models/Enquiry";
 
 export type EnquiryResult = {
   ok: boolean;
