@@ -4,11 +4,13 @@ This guide is for whoever looks after the site day to day. It assumes no
 technical background. Nothing here can break the site permanently — if
 something looks wrong, stop and call your developer.
 
-There are two web addresses:
+There are three web addresses:
 
 - **The shop** — what your customers see.
 - **The owner panel** — where you add artwork, add artists, and read
   enquiries. Only you can open this.
+- **The artist studio** — where artists apply to join and send you
+  photographs of their work. They sign in here; you never do.
 
 ---
 
@@ -172,7 +174,86 @@ When somebody pays online:
 
 ---
 
-## 8. Things worth knowing
+## 8. Artists who apply to join
+
+Artists can now apply themselves, and send you their own work. **Nothing
+they do appears on the shop until you approve it.** There are two separate
+approvals, and you control both.
+
+### How it works, start to finish
+
+1. An artist fills in the form at the **artist studio** address.
+2. Their application appears under **Applications** in your panel.
+3. You read it and either approve or turn it down.
+4. Approving emails them a link to set a password. Their studio then opens.
+5. They add a piece and send it to you.
+6. It appears under **Submissions**. Nobody outside can see it yet.
+7. You approve it — and only then does it go on the shop.
+
+The two menu items show a number when something is waiting for you. If
+there is no number, there is nothing to do.
+
+### Approving or turning down an application
+
+Click **Applications**. Each one shows their name, craft, region and how to
+reach them. **Read** opens their full story, which is the part worth your
+time.
+
+- **Approve** — they are in. A link is emailed to them automatically.
+- **Reject** — you must type a reason. They are shown it, so write
+  something they can actually use. "We already work with a weaver in this
+  region" is kind and clear; "no" is not.
+
+**About the invite link.** It appears on screen once, right after you
+approve. It is also emailed to them. If the panel says *the email did not
+go out*, copy the link and send it yourself by WhatsApp — the artist cannot
+get in without it. The link lasts two weeks and works once. If it is lost
+or expires, press **New invite link** for a fresh one; the old one stops
+working.
+
+### Approving work an artist sends you
+
+Click **Submissions**. You see the photographs, the size, the material, and
+the price they are asking for.
+
+- **Approve** — it goes on the shop immediately.
+- **Reject** — again, type what needs changing. They get an email, fix it,
+  and send it back.
+
+**You can change anything before approving.** Press **Open** to edit the
+piece as you would your own — including the price. What the artist asked
+for is still shown next to your figure, so you never lose track of what was
+agreed. Editing a piece yourself counts as approving it.
+
+### When an artist changes something already on the shop
+
+If they edit a piece that is live, **it comes off the shop** and waits for
+you again. This is on purpose — nothing reaches customers unseen. Those
+pieces sort to the top of **Submissions** and are marked *was live ·
+edited*, because every hour they sit there is an hour that piece is not
+selling. Approve them first.
+
+The artist is warned about this before they save, so it is not a surprise
+to them either.
+
+### What artists can and cannot do
+
+They can add and edit their own work, write their own story, change their
+photograph, and take back a submission you have not looked at yet.
+
+They cannot see or touch another artist's work, change their own craft or
+region (customers filter by those, so those stay yours), put anything on
+the shop without you, or delete a piece that has ever been published —
+that last one protects you, since a published piece may already have
+enquiries or a sale against it. If they want something taken down, they
+have to ask you.
+
+An artist you reject loses access straight away, even if they were already
+signed in.
+
+---
+
+## 9. Things worth knowing
 
 **Changes can take up to a minute to show.** The home page refreshes itself
 about once a minute. If you have just changed something and do not see it,
@@ -195,12 +276,16 @@ photos.
 
 ---
 
-## 9. If something goes wrong
+## 10. If something goes wrong
 
 | What you see | What to do |
 |---|---|
 | Cannot sign in | Check the email and password. After too many wrong tries, wait a few minutes. |
 | Photo will not upload | Check it is a JPEG or PNG under 10 MB, and that you are online. |
+| "The email did not go out" after approving | Normal if email is not set up yet. Copy the invite link from the screen and send it to the artist yourself. |
+| An artist says their link does not work | It has expired or was already used. Press **New invite link** on their row. |
+| An artist says their piece vanished from the shop | They almost certainly edited it. Look in **Submissions** for it marked *was live · edited*, and approve it. |
+| An artist cannot sign in at all | Check **Applications** — approved, and have they used their invite link? The row says *invite not used* if they have not. |
 | "Online payment is not configured" | The Razorpay keys are not set. Your developer needs to add them. |
 | A customer says they paid but nothing arrived | Check your Razorpay dashboard first — it is the record of what actually happened. Never mark the piece sold and unsold repeatedly. |
 | Site is down entirely | Contact your developer. Do not change anything. |

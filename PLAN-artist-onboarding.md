@@ -387,3 +387,33 @@ Manual pass, in order:
    the owner can flip it back to `pending` from the panel.
 4. **`artist/` deploy target** — same Vercel project as a separate domain, or its own?
    Affects env var setup only.
+
+---
+
+# Built — outcome
+
+All eight steps are done and committed. What changed from the plan as written:
+
+1. **npm workspaces, not a `file:` dependency.** Turbopack would not resolve
+   `@kasityot/core` through a symlink outside the app root, however it was
+   declared. A real workspace is the supported arrangement.
+2. **Emails are wired.** The plan had invites as copy-paste because email
+   looked unconfigured. It is wired now — but Resend genuinely is not
+   configured (the three env vars exist as empty strings), so the panel falls
+   back to showing the link and saying the email did not go out. Filling the
+   key in needs no code change.
+3. **`proposedPrice` added to `Artwork`.** The artist proposes and the owner
+   may re-price; without this the original ask would be erased.
+4. **Two extra guards found while building.** `POST /api/checkout` and the
+   enquiry action both looked artwork up by a raw id with no review check, so
+   an unapproved piece could have been bought or enquired about directly.
+   Both now call `isArtworkPubliclyVisible`.
+
+Verified against the live database: 6 artists and 19 artworks intact
+throughout, seventeen end-to-end checks passing, all three apps building and
+linting clean.
+
+Developer documentation is in `DEVELOPMENT.md`; the owner's guide is sections
+8–10 of `HANDOVER.md`. Open questions 2–4 in §10 were resolved as the plan
+assumed. Question 1 was answered by you: the artist proposes a price and the
+owner may change it.
