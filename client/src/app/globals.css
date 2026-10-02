@@ -63,7 +63,10 @@
   --text-label: 10px; /* mono eyebrows, nav, buttons */
   --text-label-sm: 9px; /* card rails, footer headings */
   --text-label-xs: 8px; /* logo sub-line */
-  --text-meta: 13px; /* card spec rows */
+  --text-meta: 16px; /* card spec rows */
+  --text-spec-label: 12px; /* spec row labels, card eyebrows */
+  --text-price: clamp(19px, 1.5vw, 22px); /* price on a card */
+  --text-price-lg: clamp(26px, 2.6vw, 38px); /* price on the artwork page */
   --text-body-sm: 14px; /* footer links, notes */
   --text-body: 15px; /* maker credential rows */
 
@@ -97,12 +100,21 @@
   --radius-pill: 999px;
 
   /* --- Motion --- */
-  --ease-kasityot: cubic-bezier(0.2, 0.7, 0.2, 1);
-  --duration-rise: 1.4s;
-  --duration-fade: 1.8s;
+  --ease-kasityot: cubic-bezier(0.2, 0.7, 0.2, 1); /* type and movement */
+  --ease-curtain: cubic-bezier(0.76, 0, 0.24, 1); /* panels and uncovering */
+  --ease-pop: cubic-bezier(0.34, 1.4, 0.64, 1); /* a small overshoot */
+  --duration-reveal: 1.1s; /* scroll reveals */
+  --duration-line: 1.2s; /* masked lines of type */
+  --duration-curtain: 1.3s; /* image covers */
+  --duration-zoom: 1.8s; /* image settling under its cover */
   --duration-rule: 1.6s;
+  --duration-type: 900ms; /* typed labels */
+  --duration-kenburns: 8s; /* hero slide drift */
+  --duration-swap: 900ms; /* gallery image change */
   --duration-image: 900ms;
   --duration-image-slow: 1400ms;
+  --stagger-word: 70ms;
+  --stagger-char: 38ms;
 }
 
 /* ------------------------------------------------------------------
@@ -139,28 +151,12 @@
 }
 
 /* ------------------------------------------------------------------
-   Keyframes — lifted verbatim from the design.
+   Motion.
+   Nothing on the site fades in. Things are uncovered, drawn, slid out
+   from behind an edge or set like type — the way an object is unwrapped
+   — and each page has its own way of doing it. Long durations, and one
+   curve for movement, one for panels.
 ------------------------------------------------------------------ */
-@keyframes kRise {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes kFade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 @keyframes kRule {
   from {
     transform: scaleX(0);
@@ -170,17 +166,523 @@
   }
 }
 
-@utility animate-rise {
-  animation: kRise var(--duration-rise) var(--ease-kasityot) both;
+@keyframes kLine {
+  from {
+    transform: translateY(110%);
+  }
+  to {
+    transform: none;
+  }
 }
 
-@utility animate-fade {
-  animation: kFade var(--duration-fade) ease both;
+/* Uncovered from the left edge across. */
+@keyframes kWipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
 }
 
+/* A hero slide drawn across the one before it, from the right. */
+@keyframes kSlide {
+  from {
+    clip-path: inset(0 0 0 100%);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* A stroke drawing itself along its path (paths use pathLength="1"). */
+@keyframes kDraw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes kSpin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* The preloader sheet leaving: its lower edge rises on a tilt, the left
+   side leading, until the whole sheet has gone off the top. */
+@keyframes kSheetExit {
+  0% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+  45% {
+    clip-path: polygon(0 0, 100% 0, 100% 78%, 0 52%);
+  }
+  100% {
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 -18%);
+    visibility: hidden;
+  }
+}
+
+/* What sits on the sheet travels up faster than the sheet itself. */
+@keyframes kSheetLift {
+  to {
+    transform: translateY(-22vh);
+  }
+}
+
+@keyframes kKenBurns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes kParallax {
+  from {
+    transform: translateY(-7%) scale(1.16);
+  }
+  to {
+    transform: translateY(7%) scale(1.16);
+  }
+}
+
+/* Entrances that play on load rather than on scroll. --anim-delay holds
+   one back for staggering. On the home page they wait, paused, under the
+   preloader (see .k-hold below) and start as it lifts away. */
 @utility animate-rule {
   transform-origin: left;
-  animation: kRule var(--duration-rule) ease both;
+  animation: kRule var(--duration-rule) var(--ease-kasityot)
+    var(--anim-delay, 0ms) both;
+}
+
+/* A line of type sliding up from behind its own baseline. Sits inside a
+   mask-line. */
+@utility animate-line {
+  display: block;
+  animation: kLine var(--anim-duration, var(--duration-line))
+    var(--ease-kasityot) var(--anim-delay, 0ms) both;
+}
+
+@utility animate-wipe {
+  animation: kWipe var(--duration-reveal) var(--ease-curtain)
+    var(--anim-delay, 0ms) both;
+}
+
+@utility animate-slide {
+  animation: kSlide var(--duration-curtain) var(--ease-curtain) both;
+}
+
+@utility animate-swap {
+  animation: kWipe var(--duration-swap) var(--ease-curtain) both;
+}
+
+/* The carousel dot filling up as its slide's time runs out. The duration
+   is set inline from the carousel's own interval. */
+@utility animate-progress {
+  transform-origin: left;
+  animation: kRule linear both;
+}
+
+/* The clipping window for a sliding line. Display type is set tighter than
+   its glyphs, so the window is padded out (and pulled back in) by --mask-pad
+   to keep ascenders, descenders and the italic overhang from being cut. */
+@utility mask-line {
+  display: block;
+  overflow: hidden;
+  padding-block: var(--mask-pad, 0.16em);
+  margin-block: calc(var(--mask-pad, 0.16em) * -1);
+  padding-inline-end: 0.1em;
+}
+
+/* The same window around a single word, for type set word by word or
+   letter by letter. */
+@utility mask-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-block: var(--mask-pad, 0.16em);
+  margin-block: calc(var(--mask-pad, 0.16em) * -1);
+  padding-inline: 0.06em;
+  margin-inline: -0.06em;
+}
+
+/* A hairline that draws itself under a link on hover. */
+@utility link-draw {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: -6px;
+    height: 1px;
+    background: var(--color-brass);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 500ms var(--ease-kasityot);
+  }
+
+  &:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+/* Scroll reveals. A <Reveal> is marked data-shown once it scrolls into
+   view; these classes, on it or anywhere inside it, play in response.
+   --reveal-delay staggers a whole Reveal, --rv-offset one part of it.
+   Keep them off elements that carry their own transition utilities.
+
+     rv-line       type sliding up inside a mask-line
+     rv-word       the same, one word at a time (--i is its position)
+     rv-char       the same, one letter at a time
+     rv-slide      sliding in from the right, inside an overflow-hidden row
+     rv-slide-l    sliding in from the left
+     rv-rule       a hairline drawing from the left
+     rv-wipe       uncovered left to right
+     rv-unroll     uncovered top to bottom
+     rv-type       uncovered in steps, like typing
+     rv-iris       uncovered as a circle opening from the centre
+     rv-slant      uncovered behind a slanted edge
+     rv-pop        grown from nothing
+     rv-curtain    an image well whose cover lifts away
+     rv-curtain-x  an image well whose cover draws aside
+     rv-doors      an image well whose cover parts in the middle
+     rv-zoom       the image settling back to scale under its cover
+     rv-frame      a border drawing itself around a box
+
+   The covered starting states sit under [data-js], which the reveal script
+   sets on <html>. Where that script never runs, nothing is covered. */
+@layer components {
+  .rv-line {
+    display: block;
+  }
+
+  .rv-word,
+  .rv-char {
+    display: inline-block;
+  }
+
+  .rv-frame {
+    position: relative;
+  }
+
+  .rv-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid color-mix(in srgb, var(--color-brass) 30%, transparent);
+    pointer-events: none;
+  }
+
+  [data-js] {
+    .rv-line,
+    .rv-word,
+    .rv-char,
+    .rv-slide,
+    .rv-slide-l,
+    .rv-rule,
+    .rv-wipe,
+    .rv-unroll,
+    .rv-type,
+    .rv-iris,
+    .rv-slant,
+    .rv-pop,
+    .rv-zoom,
+    .rv-curtain::after,
+    .rv-curtain-x::after,
+    .rv-doors::before,
+    .rv-doors::after,
+    .rv-frame::before {
+      transition-timing-function: var(--ease-kasityot);
+      transition-duration: var(--duration-reveal);
+      transition-delay: calc(var(--reveal-delay, 0ms) + var(--rv-offset, 0ms));
+    }
+
+    /* --- Type --- */
+    .rv-line,
+    .rv-word,
+    .rv-char {
+      transform: translateY(115%);
+      transition-property: transform;
+      transition-duration: var(--duration-line);
+    }
+
+    /* --rv-base holds the whole run back; each word or letter then
+       follows the one before it. */
+    .rv-word {
+      --rv-offset: calc(var(--rv-base, 0ms) + var(--i, 0) * var(--stagger-word));
+    }
+
+    .rv-char {
+      --rv-offset: calc(var(--rv-base, 0ms) + var(--i, 0) * var(--stagger-char));
+    }
+
+    .rv-slide {
+      transform: translateX(110%);
+      transition-property: transform;
+    }
+
+    .rv-slide-l {
+      transform: translateX(-110%);
+      transition-property: transform;
+    }
+
+    .rv-rule {
+      transform: scaleX(0);
+      transform-origin: left;
+      transition-property: transform;
+      transition-duration: var(--duration-rule);
+    }
+
+    /* --- Uncovering. The end states reach a little past the box so that
+       focus rings and hover underlines are not cut off afterwards. --- */
+    .rv-wipe,
+    .rv-type {
+      clip-path: inset(-0.4em 100% -0.4em -0.4em);
+      transition-property: clip-path;
+      transition-timing-function: var(--ease-curtain);
+    }
+
+    .rv-type {
+      transition-duration: var(--duration-type);
+      transition-timing-function: steps(var(--type-steps, 22), end);
+    }
+
+    .rv-unroll {
+      clip-path: inset(-0.4em -0.4em 100% -0.4em);
+      transition-property: clip-path;
+      transition-timing-function: var(--ease-curtain);
+    }
+
+    .rv-iris {
+      clip-path: circle(0% at 50% 50%);
+      transition-property: clip-path;
+      transition-duration: var(--duration-curtain);
+      transition-timing-function: var(--ease-curtain);
+    }
+
+    .rv-slant {
+      clip-path: polygon(0 0, 0 0, -30% 100%, 0 100%);
+      transition-property: clip-path;
+      transition-duration: var(--duration-curtain);
+      transition-timing-function: var(--ease-curtain);
+    }
+
+    .rv-pop {
+      transform: scale(0);
+      transition-property: transform;
+      transition-timing-function: var(--ease-pop);
+    }
+
+    /* --- Image wells. The image is covered by a panel of the well's own
+       ground colour rather than hidden, so it still counts as painted. --- */
+    .rv-curtain::after,
+    .rv-curtain-x::after,
+    .rv-doors::before,
+    .rv-doors::after {
+      content: "";
+      position: absolute;
+      inset-block: 0;
+      z-index: 3;
+      background: inherit;
+      pointer-events: none;
+      transition-property: transform;
+      transition-duration: var(--duration-curtain);
+      transition-timing-function: var(--ease-curtain);
+    }
+
+    .rv-curtain::after {
+      inset-inline: 0;
+      transform-origin: top;
+    }
+
+    .rv-curtain-x::after {
+      inset-inline: 0;
+      transform-origin: right;
+    }
+
+    .rv-doors::before {
+      left: 0;
+      width: 50.5%;
+      transform-origin: left;
+    }
+
+    .rv-doors::after {
+      right: 0;
+      width: 50.5%;
+      transform-origin: right;
+    }
+
+    .rv-zoom {
+      transform: scale(1.14);
+      transition-property: transform;
+      transition-duration: var(--duration-zoom);
+    }
+
+    .rv-frame::before {
+      clip-path: inset(0 100% 0 0);
+      transition-property: clip-path;
+      transition-duration: var(--duration-curtain);
+      transition-timing-function: var(--ease-curtain);
+    }
+
+    /* --- Shown --- */
+    :is([data-shown].rv-line, [data-shown] .rv-line),
+    :is([data-shown].rv-word, [data-shown] .rv-word),
+    :is([data-shown].rv-char, [data-shown] .rv-char),
+    :is([data-shown].rv-slide, [data-shown] .rv-slide),
+    :is([data-shown].rv-slide-l, [data-shown] .rv-slide-l),
+    :is([data-shown].rv-rule, [data-shown] .rv-rule),
+    :is([data-shown].rv-pop, [data-shown] .rv-pop),
+    :is([data-shown].rv-zoom, [data-shown] .rv-zoom) {
+      transform: none;
+    }
+
+    :is([data-shown].rv-wipe, [data-shown] .rv-wipe),
+    :is([data-shown].rv-type, [data-shown] .rv-type),
+    :is([data-shown].rv-unroll, [data-shown] .rv-unroll) {
+      clip-path: inset(-0.4em -0.4em -0.4em -0.4em);
+    }
+
+    :is([data-shown].rv-iris, [data-shown] .rv-iris) {
+      clip-path: circle(75% at 50% 50%);
+    }
+
+    :is([data-shown].rv-slant, [data-shown] .rv-slant) {
+      clip-path: polygon(0 0, 130% 0, 100% 100%, 0 100%);
+    }
+
+    :is([data-shown].rv-curtain, [data-shown] .rv-curtain)::after {
+      transform: scaleY(0);
+    }
+
+    :is([data-shown].rv-curtain-x, [data-shown] .rv-curtain-x)::after,
+    :is([data-shown].rv-doors, [data-shown] .rv-doors)::before,
+    :is([data-shown].rv-doors, [data-shown] .rv-doors)::after {
+      transform: scaleX(0);
+    }
+
+    :is([data-shown].rv-frame, [data-shown] .rv-frame)::before {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  /* Hero slides drift slowly inward while they are on show. A resting
+     slide waits at the end scale, so leaving never snaps back. */
+  .k-zoom {
+    transform: scale(1.08);
+  }
+
+  [data-active="true"] > .k-zoom {
+    animation: kKenBurns var(--duration-kenburns) ease-out both;
+  }
+
+  /* Reading-progress hairline under the header; stays collapsed where
+     scroll timelines are not supported. */
+  .k-progress {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  /* --- The home page preloader (see Preloader.tsx). The reveal script
+     sets data-intro="play" on <html> for a full load of the home page, so
+     the sheet covers the very first paint; the component then moves it to
+     "leaving" once the page has loaded, and to "done". Without the script
+     the sheet is never shown at all. --- */
+  .k-intro {
+    display: none;
+  }
+
+  :is([data-intro="play"], [data-intro="leaving"]) {
+    /* The page underneath stays put until it is uncovered. */
+    body {
+      overflow: hidden;
+    }
+
+    .k-intro {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: block;
+      background: var(--color-ink);
+    }
+  }
+
+  [data-intro="play"] {
+    /* The hero's own entrance waits, frozen at its first frame, until the
+       sheet starts to lift. */
+    .k-hold,
+    .k-hold * {
+      animation-play-state: paused !important;
+    }
+
+    /* The wheel mark: rings, then the spokes drawn round in turn. */
+    .k-intro-ring {
+      stroke-dasharray: 1;
+      animation: kDraw 1100ms var(--ease-curtain) 150ms both;
+    }
+
+    .k-intro-spoke {
+      stroke-dasharray: 1;
+      animation: kDraw 500ms var(--ease-kasityot)
+        calc(400ms + var(--i, 0) * 14ms) both;
+    }
+
+    .k-intro-letter {
+      display: inline-block;
+      animation: kLine 1100ms var(--ease-kasityot)
+        calc(700ms + var(--i, 0) * 70ms) both;
+    }
+
+    .k-intro-sub {
+      animation: kWipe 900ms steps(30, end) 1500ms both;
+    }
+
+    .k-intro-tagline {
+      animation: kLine 1200ms var(--ease-kasityot) 1700ms both;
+    }
+
+    .k-intro-rail {
+      animation: kLine 900ms var(--ease-kasityot) 300ms both;
+    }
+  }
+
+  .k-intro-wheel {
+    transform-origin: 50% 50%;
+    animation: kSpin 30s linear infinite;
+  }
+
+  [data-intro="leaving"] {
+    .k-intro {
+      animation: kSheetExit 1400ms var(--ease-curtain) 250ms both;
+    }
+
+    .k-intro-stage {
+      animation: kSheetLift 1400ms var(--ease-curtain) 250ms both;
+    }
+  }
+}
+
+/* Scroll-linked motion is progressive: browsers without scroll timelines
+   simply get the still version. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .k-progress {
+      animation: kRule linear both;
+      animation-timeline: scroll(root);
+    }
+
+    .k-parallax {
+      animation: kParallax linear both;
+      animation-timeline: view();
+    }
+  }
 }
 
 /* Respect the reader's motion preference — the design's animations are
@@ -190,7 +692,14 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+
+  .k-zoom {
+    animation: none !important;
+    transform: none !important;
   }
 }

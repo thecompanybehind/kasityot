@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 /* Cart, Commission and Journal are deliberately absent: the README rules out
    carts, multi-item checkout and a blog. One artwork, one purchase. */
@@ -44,17 +44,21 @@ export function Header() {
           <Link
             key={item.href}
             href={item.href}
-            className="transition-colors duration-200 hover:text-brass"
+            className="link-draw transition-colors duration-200 hover:text-brass"
           >
             {item.label}
           </Link>
         ))}
       </nav>
 
-      <div className="flex items-center gap-5 font-mono text-label tracking-nav uppercase">
+      {/* ml-auto keeps this group against the right edge even if the row
+          ever wraps. On a phone the Browse pill would not fit beside the
+          logo, and the menu already leads with Artworks, so it is dropped
+          there and the menu button sits alone on the right. */}
+      <div className="ml-auto flex items-center gap-5 font-mono text-label tracking-nav uppercase">
         <Link
           href="/artworks"
-          className="rounded-pill border border-brass/55 px-[18px] py-2.5 text-brass transition-colors duration-200 hover:border-brass hover:bg-brass hover:text-ink"
+          className="hidden rounded-pill border border-brass/55 px-[18px] py-2.5 text-brass transition-colors duration-200 hover:border-brass hover:bg-brass hover:text-ink sm:block"
         >
           Browse
         </Link>
@@ -91,18 +95,29 @@ export function Header() {
         className="absolute inset-x-0 top-full border-b border-brass/28 bg-ink lg:hidden"
       >
         <nav className="flex flex-col px-[30px] py-2">
-          {NAV.map((item) => (
+          {/* The sheet is display:none while closed, so the links slide up
+              afresh each time it opens. */}
+          {NAV.map((item, i) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setOpen(false)}
-              className="border-b border-bone/12 py-5 font-display text-[28px] leading-none text-cream transition-colors duration-200 last:border-b-0 hover:text-brass"
+              className="border-b border-bone/12 py-5 font-display text-[28px] leading-none text-cream transition-colors duration-200 [--anim-duration:700ms] last:border-b-0 hover:text-brass"
+              style={{ "--anim-delay": `${i * 70}ms` } as CSSProperties}
             >
-              {item.label}
+              <span className="mask-line">
+                <span className="animate-line">{item.label}</span>
+              </span>
             </Link>
           ))}
         </nav>
       </div>
+
+      {/* How far down the page the reader is. */}
+      <span
+        aria-hidden
+        className="k-progress absolute inset-x-0 -bottom-px h-px bg-brass"
+      />
     </header>
   );
 }

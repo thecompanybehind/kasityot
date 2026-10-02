@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ArtistDirectory } from "@/components/ArtistDirectory";
+import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { getArtists } from "@/lib/queries";
 
@@ -34,8 +35,9 @@ export default async function ArtistsPage({
       <SectionHeading
         eyebrow={`${artists.length} ${artists.length === 1 ? "artist" : "artists"}`}
         title="The artists"
+        setting="words"
       />
-      <div className="mt-(--spacing-rule-mt) h-px bg-brass/30" />
+      <Reveal className="rv-rule mt-(--spacing-rule-mt) h-px bg-brass/30" />
 
       <ArtistDirectory
         artists={artists}

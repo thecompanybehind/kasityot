@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ArtworkCard } from "@/components/ArtworkCard";
 import { ArtworkFilters } from "@/components/ArtworkFilters";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { getArtists, getArtworks, type ArtworkFilters as Filters } from "@/lib/queries";
 
@@ -54,25 +55,34 @@ export default async function ArtworksPage({
       <SectionHeading
         eyebrow={`${artworks.length} ${artworks.length === 1 ? "piece" : "pieces"}`}
         title="Every artwork"
+        setting="chars"
       />
-      <div className="mt-(--spacing-rule-mt) h-px bg-brass/30" />
+      <Reveal className="rv-rule mt-(--spacing-rule-mt) h-px bg-brass/30" />
 
-      <ArtworkFilters
-        craftTypes={craftTypes}
-        artists={artists.map((a) => ({ slug: a.slug, name: a.name }))}
-        current={{
-          craft: sp.craft ?? "",
-          artist: sp.artist ?? "",
-          min: sp.min ?? "",
-          max: sp.max ?? "",
-          sort: sp.sort ?? "newest",
-        }}
-      />
+      <Reveal className="rv-wipe [--rv-offset:500ms]">
+        <ArtworkFilters
+          craftTypes={craftTypes}
+          artists={artists.map((a) => ({ slug: a.slug, name: a.name }))}
+          current={{
+            craft: sp.craft ?? "",
+            artist: sp.artist ?? "",
+            min: sp.min ?? "",
+            max: sp.max ?? "",
+            sort: sp.sort ?? "newest",
+          }}
+        />
+      </Reveal>
 
       {artworks.length ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-(--spacing-gap-grid) pt-(--spacing-rule-mt)">
           {artworks.map((artwork, i) => (
-            <ArtworkCard key={artwork.id} artwork={artwork} priority={i < 3} />
+            <ArtworkCard
+              key={artwork.id}
+              artwork={artwork}
+              priority={i < 3}
+              stagger={i % 3}
+              unveil="doors"
+            />
           ))}
         </div>
       ) : (

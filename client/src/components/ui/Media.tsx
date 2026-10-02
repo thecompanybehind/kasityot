@@ -13,9 +13,10 @@ type MediaProps = {
 };
 
 /**
- * A single image that fades in once decoded, over a ground-coloured well.
- * The well means no flash of empty page and no layout shift — the parent
- * owns the aspect ratio, this only fills it.
+ * A single image over a ground-coloured well. The well means no flash of
+ * empty page and no layout shift — the parent owns the aspect ratio, this
+ * only fills it. Nothing on the site fades in, so the image simply appears
+ * once decoded; any entrance is the business of the well around it.
  */
 export function Media({
   src,
@@ -24,17 +25,6 @@ export function Media({
   priority = false,
   className = "",
 }: MediaProps) {
-  const [loaded, setLoaded] = useState(false);
-
-  /*
-   * A priority image is the one the browser measures for Largest
-   * Contentful Paint, and an element at opacity 0 does not count as
-   * painted. Fading it in therefore delays LCP by the length of the
-   * fade. Above-the-fold images skip the fade and render immediately;
-   * everything below keeps it.
-   */
-  const visible = priority || loaded;
-
   return (
     <Image
       src={src}
@@ -43,12 +33,7 @@ export function Media({
       sizes={sizes}
       priority={priority}
       fetchPriority={priority ? "high" : undefined}
-      onLoad={() => setLoaded(true)}
-      className={`object-cover ${
-        priority
-          ? ""
-          : "transition-opacity duration-(--duration-image) ease-kasityot"
-      } ${visible ? "opacity-100" : "opacity-0"} ${className}`}
+      className={`object-cover ${className}`}
     />
   );
 }
@@ -69,7 +54,6 @@ type FrameProps = {
  */
 export function Frame({ src, detail, alt, sizes, priority }: FrameProps) {
   const [hover, setHover] = useState(false);
-  const [loaded, setLoaded] = useState(false);
 
   const shared =
     "object-cover transition-[opacity,transform] ease-kasityot duration-(--duration-image)";
@@ -97,9 +81,8 @@ export function Frame({ src, detail, alt, sizes, priority }: FrameProps) {
         fill
         sizes={sizes}
         priority={priority}
-        onLoad={() => setLoaded(true)}
         className={`${shared} ${
-          detail && hover ? "opacity-0" : loaded ? "opacity-100" : "opacity-0"
+          detail && hover ? "opacity-0" : "opacity-100"
         } ${hover ? "scale-[1.03]" : "scale-100"}`}
       />
     </div>

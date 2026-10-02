@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { ArtworkCard } from "@/components/ArtworkCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Media } from "@/components/ui/Media";
+import { Reveal } from "@/components/ui/Reveal";
+import { Chars } from "@/components/ui/SplitText";
 import { getArtistBySlug, getArtists, getArtworksByArtist } from "@/lib/queries";
 
 /** Cached for a minute. generateStaticParams pre-builds the pages that exist at deploy time. */
@@ -65,27 +67,35 @@ export default async function ArtistPage({
             collapses because the element is absent, not empty.
           */}
           {artist.photo ? (
-            <div className="relative aspect-2/3 min-w-0 overflow-hidden bg-parchment-deep">
-              <Media
-                src={artist.photo}
-                alt={artist.name}
-                sizes="(max-width: 1024px) 100vw, 40vw"
-                priority
-              />
-            </div>
+            <Reveal className="min-w-0">
+              {/* The portrait is uncovered behind a slanted edge. */}
+              <div className="rv-slant relative aspect-2/3 overflow-hidden bg-parchment-deep">
+                <div className="rv-zoom absolute inset-0">
+                  <Media
+                    src={artist.photo}
+                    alt={artist.name}
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                    priority
+                  />
+                </div>
+              </div>
+            </Reveal>
           ) : null}
 
-          <div className="min-w-0">
+          <Reveal className="min-w-0">
             <div className="pb-4 font-mono text-label tracking-wide text-clay uppercase">
-              {artist.craftType} · {artist.region}
+              <span className="rv-type inline-block [--rv-offset:300ms]">
+                {artist.craftType} · {artist.region}
+              </span>
             </div>
-            <h1 className="m-0 font-display text-section leading-[0.98] font-light tracking-section text-espresso">
-              {artist.name}
+            {/* The name is set a letter at a time, like a signature. */}
+            <h1 className="m-0 font-display text-section leading-[0.98] font-light tracking-section text-espresso [--rv-base:450ms]">
+              <Chars text={artist.name} />
             </h1>
-            <p className="m-0 max-w-[58ch] pt-8 text-lede leading-[1.75] text-pretty text-espresso-soft">
+            <p className="rv-unroll m-0 max-w-[58ch] pt-8 text-lede leading-[1.75] text-pretty text-espresso-soft [--rv-offset:900ms]">
               {artist.story}
             </p>
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -96,11 +106,14 @@ export default async function ArtistPage({
         it never existed.
       */}
       {artist.videoUrl ? (
-        <section className="px-(--spacing-section-x) py-(--spacing-section-y)">
+        <Reveal
+          as="section"
+          className="px-(--spacing-section-x) py-(--spacing-section-y)"
+        >
           <div className="pb-8 font-mono text-label tracking-wide text-slate uppercase">
-            In the studio
+            <span className="rv-type inline-block">In the studio</span>
           </div>
-          <div className="relative aspect-video w-full overflow-hidden bg-ink-raised">
+          <div className="rv-slant relative aspect-video w-full overflow-hidden bg-ink-raised [--rv-offset:200ms]">
             <iframe
               src={artist.videoUrl}
               title={`${artist.name} at work`}
@@ -109,25 +122,32 @@ export default async function ArtistPage({
               className="absolute inset-0 size-full border-0"
             />
           </div>
-        </section>
+        </Reveal>
       ) : null}
 
       {/* ── Their work ─────────────────────────────────────── */}
       <section className="px-(--spacing-section-x) py-(--spacing-section-y)">
-        <div className="flex flex-wrap items-end justify-between gap-6">
+        <Reveal className="flex flex-wrap items-end justify-between gap-6">
           <h2 className="m-0 font-display text-section-sm leading-none font-light tracking-quote text-cream">
-            Work by {artist.name}
+            <span className="mask-line">
+              <span className="rv-line">Work by {artist.name}</span>
+            </span>
           </h2>
-          <span className="font-mono text-label-sm tracking-rail text-slate uppercase">
+          <span className="rv-type font-mono text-label-sm tracking-rail text-slate uppercase [--rv-offset:400ms]">
             {artworks.length} {artworks.length === 1 ? "piece" : "pieces"}
           </span>
-        </div>
-        <div className="mt-(--spacing-rule-mt) h-px bg-brass/30" />
+        </Reveal>
+        <Reveal className="rv-rule mt-(--spacing-rule-mt) h-px bg-brass/30" />
 
         {artworks.length ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-(--spacing-gap-grid) pt-(--spacing-rule-mt)">
-            {artworks.map((artwork) => (
-              <ArtworkCard key={artwork.id} artwork={artwork} />
+            {artworks.map((artwork, i) => (
+              <ArtworkCard
+                key={artwork.id}
+                artwork={artwork}
+                stagger={i % 3}
+                unveil="aside"
+              />
             ))}
           </div>
         ) : (

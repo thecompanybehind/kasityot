@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, IBM_Plex_Mono, Jost } from "next/font/google";
+import { REVEAL_SCRIPT } from "@/components/ui/Reveal";
 import "./globals.css";
 
 const display = Cormorant_Garamond({
@@ -49,8 +50,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
+      // The reveal script sets data-js on this element before hydration.
+      suppressHydrationWarning
     >
-      <body className="max-w-full overflow-x-hidden bg-ink">{children}</body>
+      <body className="max-w-full overflow-x-hidden bg-ink">
+        <script dangerouslySetInnerHTML={{ __html: REVEAL_SCRIPT }} />
+        {children}
+      </body>
     </html>
   );
 }

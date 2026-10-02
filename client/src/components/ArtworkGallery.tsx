@@ -10,7 +10,10 @@ type Props = {
 };
 
 export function ArtworkGallery({ images, title, sold = false }: Props) {
-  const [active, setActive] = useState(0);
+  // The image shown before the current one stays underneath while the new
+  // one is drawn across it; -1 until the viewer first picks a thumbnail, so
+  // the opening image, which is the page's largest paint, is never animated.
+  const [{ active, prev }, setView] = useState({ active: 0, prev: -1 });
 
   if (!images.length) {
     return (
@@ -22,15 +25,26 @@ export function ArtworkGallery({ images, title, sold = false }: Props) {
 
   return (
     <div className="flex min-w-0 flex-col gap-3.5">
-      <div className="relative aspect-4/5 overflow-hidden bg-ink-raised">
-        <Media
-          src={images[active]}
-          alt={`${title} — view ${active + 1}`}
-          sizes="(max-width: 1024px) 100vw, 55vw"
-          priority
-        />
+      <div className="rv-curtain-x relative aspect-4/5 overflow-hidden bg-ink-raised">
+        {images.map((src, i) =>
+          i === active || i === prev ? (
+            <div
+              key={src + i}
+              className={`absolute inset-0 ${
+                i === active ? `z-1 ${prev >= 0 ? "animate-swap" : ""}` : ""
+              }`}
+            >
+              <Media
+                src={src}
+                alt={i === active ? `${title} — view ${i + 1}` : ""}
+                sizes="(max-width: 1024px) 100vw, 55vw"
+                priority
+              />
+            </div>
+          ) : null,
+        )}
         {sold ? (
-          <div className="absolute top-0 right-0 m-4 bg-ink px-3 py-1.5 font-mono text-label-sm tracking-rail text-brass uppercase">
+          <div className="absolute top-0 right-0 z-2 m-4 bg-ink px-3 py-1.5 font-mono text-label-sm tracking-rail text-brass uppercase">
             Sold
           </div>
         ) : null}
@@ -38,12 +52,16 @@ export function ArtworkGallery({ images, title, sold = false }: Props) {
 
       {/* Thumbnails only earn their space when there is more than one image. */}
       {images.length > 1 ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-3">
+        <div className="rv-wipe grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-3 [--rv-offset:700ms]">
           {images.map((src, i) => (
             <button
               key={src + i}
               type="button"
-              onClick={() => setActive(i)}
+              onClick={() =>
+                setView((view) =>
+                  i === view.active ? view : { active: i, prev: view.active },
+                )
+              }
               aria-label={`View image ${i + 1}`}
               aria-current={i === active}
               className={`relative aspect-square overflow-hidden bg-ink-raised transition-opacity ${
