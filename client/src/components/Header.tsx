@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties } from "react";
 
@@ -26,9 +27,13 @@ export function Header() {
   return (
     <header className="sticky top-0 z-60 flex flex-wrap items-center justify-between gap-6 border-b border-brass/28 bg-ink/82 px-[30px] py-5 backdrop-blur-[16px]">
       <Link href="/" className="flex items-center gap-3.5">
-        <span className="grid size-[30px] place-items-center border border-brass font-display text-[17px] text-brass">
-          K
-        </span>
+        <Image
+          src="/logo-mark.png"
+          alt=""
+          width={176}
+          height={207}
+          className="h-[34px] w-auto"
+        />
         <span className="flex flex-col gap-[3px]">
           <span className="font-sans text-[12px] tracking-logo uppercase">
             Kasityot
@@ -39,7 +44,9 @@ export function Header() {
         </span>
       </Link>
 
-      <nav className="hidden flex-wrap gap-7 font-mono text-label tracking-nav uppercase lg:flex">
+      {/* Centred on the header itself, not in the space left between the
+          logo and the Browse pill, which are different widths. */}
+      <nav className="absolute left-1/2 hidden -translate-x-1/2 gap-7 font-mono text-label tracking-nav uppercase lg:flex">
         {NAV.map((item) => (
           <Link
             key={item.href}

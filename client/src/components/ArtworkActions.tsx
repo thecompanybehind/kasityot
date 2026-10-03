@@ -85,6 +85,7 @@ export function ArtworkActions({
         currency: data.currency,
         order_id: data.orderId,
         name: "Kasityot",
+        image: `${window.location.origin}/logo-tile.png`,
         description: data.artworkTitle,
         prefill: {
           name: String(formData.get("name") ?? ""),

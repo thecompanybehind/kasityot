@@ -16,8 +16,8 @@ const CHANNELS = [
   },
   {
     label: "Phone / WhatsApp",
-    value: "+91 00000 00000",
-    href: "tel:+910000000000",
+    value: "+91 99200 22433",
+    href: "tel:+919920022433",
   },
 ];
 

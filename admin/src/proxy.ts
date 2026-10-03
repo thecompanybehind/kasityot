@@ -13,7 +13,8 @@ import { jwtVerify } from "jose";
  */
 
 const COOKIE = "kasityot_session";
-const PUBLIC_PATHS = ["/login"];
+// The logo and icons are on the login page, so they are public with it.
+const PUBLIC_PATHS = ["/login", "/logo-mark.png", "/icon", "/apple-icon"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

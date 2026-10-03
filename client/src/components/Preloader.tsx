@@ -1,20 +1,20 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, type CSSProperties } from "react";
 
-const NAME = "Kasityot";
+/** Set as the logo sets it: lower case, with its dots. */
+const NAME = "käsityöt";
 
 /** The counter never finishes sooner than this, so the opening can be read. */
 const MIN_MS = 3200;
 /** Past this, the page is shown whatever is still loading. */
 const MAX_MS = 9000;
 /** How long the sheet takes to leave (matches kSheetExit plus its delay). */
-const EXIT_MS = 1650;
+const EXIT_MS = 1500;
 
 /** Fired on window when the sheet starts to lift, for the hero carousel. */
 export const INTRO_END_EVENT = "kasityot:intro-end";
-
-const SPOKES = 72;
 
 /** Resolves when the hero's first image has loaded (or failed). */
 function heroImage(): Promise<void> {
@@ -115,9 +115,9 @@ function weave(canvas: HTMLCanvasElement): () => void {
 
 /**
  * The home page's opening: a full-screen sheet with threads moving on a
- * loom behind it, the wheel mark drawn and the name set, and a counter
- * that runs to 100 as the page actually loads. Then the sheet lifts away
- * on a tilt and the hero starts its own entrance underneath.
+ * loom behind it, the logo mark raised and the name set, and a counter
+ * that runs to 100 as the page actually loads. Then its contents fade,
+ * the sheet slides straight up and the hero starts its own entrance underneath.
  *
  * The sheet is raised by the inline reveal script before first paint and
  * styled by .k-intro in globals.css; it is display:none on every other
@@ -189,54 +189,19 @@ export function Preloader() {
 
       <div className="k-intro-stage relative grid h-full grid-rows-[1fr_auto] px-(--spacing-section-x)">
         <div className="grid place-content-center justify-items-center gap-[clamp(18px,2.6vw,30px)] text-center">
-          {/* The mark: a potter's wheel, its rings and spokes drawn in. */}
-          <svg
-            viewBox="0 0 120 120"
-            className="size-[clamp(78px,8vw,104px)] text-brass"
-            fill="none"
-            stroke="currentColor"
-          >
-            <g className="k-intro-wheel">
-              {Array.from({ length: SPOKES }, (_, i) => {
-                const a = (i / SPOKES) * Math.PI * 2;
-                const inner = i % 2 ? 30 : 26;
-                // Fixed precision, so server and browser agree on the markup.
-                const at = (r: number, f: (a: number) => number) =>
-                  (60 + f(a) * r).toFixed(2);
-                return (
-                  <line
-                    key={i}
-                    className="k-intro-spoke"
-                    pathLength={1}
-                    x1={at(inner, Math.cos)}
-                    y1={at(inner, Math.sin)}
-                    x2={at(57, Math.cos)}
-                    y2={at(57, Math.sin)}
-                    strokeWidth={0.7}
-                    style={{ "--i": i } as CSSProperties}
-                  />
-                );
-              })}
-            </g>
-            <circle
-              className="k-intro-ring"
-              pathLength={1}
-              cx={60}
-              cy={60}
-              r={20}
-              strokeWidth={0.9}
+          {/* The mark, rising from under its own edge. */}
+          <div className="overflow-hidden">
+            <Image
+              src="/logo-mark.png"
+              alt=""
+              width={176}
+              height={207}
+              priority
+              className="k-intro-mark h-[clamp(92px,9.5vw,124px)] w-auto"
             />
-            <circle
-              className="k-intro-ring"
-              pathLength={1}
-              cx={60}
-              cy={60}
-              r={6}
-              strokeWidth={0.9}
-            />
-          </svg>
+          </div>
 
-          <div className="overflow-hidden py-[0.12em] pl-[0.3em] font-display text-[clamp(44px,7.4vw,112px)] leading-none font-light tracking-[0.3em] text-cream uppercase">
+          <div className="overflow-hidden pt-[0.12em] pb-[0.28em] pl-[0.22em] font-display text-[clamp(52px,8.4vw,128px)] leading-none font-light tracking-[0.22em] text-cream">
             {[...NAME].map((letter, i) => (
               <span
                 key={i}

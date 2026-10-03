@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 /* No "Apply to sell" or newsletter: artists never self-register in this
@@ -24,9 +25,13 @@ export function Footer() {
     <footer className="flex flex-col gap-[clamp(44px,5vw,76px)] border-t border-brass/30 px-(--spacing-section-x) pt-[clamp(52px,7vw,100px)] pb-[34px]">
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-10">
         <div className="flex min-w-0 max-w-[34ch] flex-col gap-4.5">
-          <span className="grid size-[34px] place-items-center border border-brass font-display text-[19px] text-brass">
-            K
-          </span>
+          <Image
+            src="/logo-mark.png"
+            alt=""
+            width={176}
+            height={207}
+            className="h-[44px] w-auto self-start"
+          />
           <div className="font-sans text-[12px] tracking-logo uppercase">
             Kasityot
           </div>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createSession, getSession, verifyCredentials } from "@/lib/auth";
 import { fieldClass, labelClass } from "@/components/ui";
@@ -32,9 +33,13 @@ export default async function LoginPage({
     <div className="grid min-h-dvh place-items-center px-6 py-16">
       <div className="w-full max-w-[420px]">
         <div className="flex items-center gap-3.5 pb-10">
-          <span className="grid size-[34px] place-items-center border border-brass font-display text-[19px] text-brass">
-            K
-          </span>
+          <Image
+            src="/logo-mark.png"
+            alt=""
+            width={176}
+            height={207}
+            className="h-[38px] w-auto"
+          />
           <span className="flex flex-col gap-[3px]">
             <span className="font-sans text-[12px] tracking-logo uppercase">
               Kasityot

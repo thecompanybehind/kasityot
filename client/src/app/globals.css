@@ -195,41 +195,19 @@
   }
 }
 
-/* A stroke drawing itself along its path (paths use pathLength="1"). */
-@keyframes kDraw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes kSpin {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
-/* The preloader sheet leaving: its lower edge rises on a tilt, the left
-   side leading, until the whole sheet has gone off the top. */
+/* The preloader sheet leaving: one straight, level slide off the top. */
 @keyframes kSheetExit {
-  0% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-  }
-  45% {
-    clip-path: polygon(0 0, 100% 0, 100% 78%, 0 52%);
-  }
-  100% {
-    clip-path: polygon(0 0, 100% 0, 100% 0, 0 -18%);
+  to {
+    transform: translateY(-100%);
     visibility: hidden;
   }
 }
 
-/* What sits on the sheet travels up faster than the sheet itself. */
+/* What sits on the sheet fades out first, so the sheet leaves empty. */
 @keyframes kSheetLift {
   to {
-    transform: translateY(-22vh);
+    opacity: 0;
+    transform: translateY(-3vh);
   }
 }
 
@@ -622,16 +600,8 @@
       animation-play-state: paused !important;
     }
 
-    /* The wheel mark: rings, then the spokes drawn round in turn. */
-    .k-intro-ring {
-      stroke-dasharray: 1;
-      animation: kDraw 1100ms var(--ease-curtain) 150ms both;
-    }
-
-    .k-intro-spoke {
-      stroke-dasharray: 1;
-      animation: kDraw 500ms var(--ease-kasityot)
-        calc(400ms + var(--i, 0) * 14ms) both;
+    .k-intro-mark {
+      animation: kLine 1100ms var(--ease-kasityot) 150ms both;
     }
 
     .k-intro-letter {
@@ -653,18 +623,13 @@
     }
   }
 
-  .k-intro-wheel {
-    transform-origin: 50% 50%;
-    animation: kSpin 30s linear infinite;
-  }
-
   [data-intro="leaving"] {
     .k-intro {
-      animation: kSheetExit 1400ms var(--ease-curtain) 250ms both;
+      animation: kSheetExit 1100ms var(--ease-curtain) 350ms both;
     }
 
     .k-intro-stage {
-      animation: kSheetLift 1400ms var(--ease-curtain) 250ms both;
+      animation: kSheetLift 500ms ease-out both;
     }
   }
 }

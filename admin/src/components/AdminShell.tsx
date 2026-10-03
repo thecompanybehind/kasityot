@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -43,9 +44,13 @@ export function AdminShell({
       <header className="sticky top-0 z-60 border-b border-brass/28 bg-ink/92 backdrop-blur-[16px]">
         <div className="flex flex-wrap items-center justify-between gap-5 px-[clamp(20px,4vw,44px)] py-5">
           <div className="flex items-center gap-3.5">
-            <span className="grid size-[30px] place-items-center border border-brass font-display text-[17px] text-brass">
-              K
-            </span>
+            <Image
+              src="/logo-mark.png"
+              alt=""
+              width={176}
+              height={207}
+              className="h-[34px] w-auto"
+            />
             <span className="flex flex-col gap-[3px]">
               <span className="font-sans text-[12px] tracking-logo uppercase">
                 Kasityot
