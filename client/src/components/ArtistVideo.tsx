@@ -16,17 +16,20 @@ import {
 export function ArtistVideo({
   url,
   name,
+  wide = false,
   className = "",
 }: {
   url: string;
   name: string;
+  /** The profile's centrepiece size; otherwise the smaller frame beside a piece. */
+  wide?: boolean;
   className?: string;
 }) {
   const title = `${name} at work`;
 
   return (
     <div
-      className={`relative aspect-video w-full max-w-[820px] overflow-hidden bg-ink-raised ${className}`}
+      className={`relative aspect-video w-full overflow-hidden bg-ink-raised ${wide ? "max-w-[1230px]" : "max-w-[820px]"} ${className}`}
     >
       {isUploadedVideo(url) ? (
         <video

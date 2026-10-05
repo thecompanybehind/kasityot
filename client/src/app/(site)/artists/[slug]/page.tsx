@@ -111,14 +111,18 @@ export default async function ArtistPage({
           as="section"
           className="px-(--spacing-section-x) py-(--spacing-section-y)"
         >
-          <div className="pb-8 font-mono text-label tracking-wide text-slate uppercase">
-            <span className="rv-type inline-block">In the studio</span>
+          {/* Centred as one block, so the label stays on the video's edge. */}
+          <div className="mx-auto max-w-[1230px]">
+            <div className="pb-8 font-mono text-label tracking-wide text-slate uppercase">
+              <span className="rv-type inline-block">In the studio</span>
+            </div>
+            <ArtistVideo
+              url={artist.videoUrl}
+              name={artist.name}
+              wide
+              className="rv-slant [--rv-offset:200ms]"
+            />
           </div>
-          <ArtistVideo
-            url={artist.videoUrl}
-            name={artist.name}
-            className="rv-slant [--rv-offset:200ms]"
-          />
         </Reveal>
       ) : null}
 
