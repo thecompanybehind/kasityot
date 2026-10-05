@@ -106,6 +106,45 @@
 }
 
 /* ------------------------------------------------------------------
+   Light theme — the panel only.
+   Dark is the default and is the palette above, untouched. Light swaps
+   the same tokens for a white ground, so every component follows without
+   knowing which theme it is in. Names keep their dark-ground meaning:
+   "ink" is always the page, "cream" always the heading colour.
+   The theme is a cookie read in layout.tsx and set by ThemeToggle.
+------------------------------------------------------------------ */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-ink: #ffffff;
+  --color-ink-raised: #f1eee9;
+  --color-ink-panel: #f7f5f1;
+  --color-ink-commission: #f7f5f1;
+  --color-ink-overlay: #ffffff;
+
+  --color-cream: #1a1613;
+  --color-bone: #2a2520;
+  --color-bone-soft: #3a342c;
+  --color-bone-muted: #5a5249;
+  --color-stone: #4a443c;
+  --color-slate: #6a6157;
+  --color-slate-dim: #7a7166;
+
+  /* Brass darkens so it still reads as text and as a button on white. */
+  --color-brass: #8a6234;
+  --color-brass-light: #a0743f;
+  --color-brass-deep: #6e4d27;
+}
+
+/* The mark's pale facet is cut for a dark ground; a hairline shadow keeps
+   its outline on white. */
+:root[data-theme="light"] .logo-mark {
+  filter: drop-shadow(0 0 0.6px rgb(26 22 19 / 0.55));
+}
+
+/* ------------------------------------------------------------------
    Base — mirrors the design's reset and body defaults.
    These live in @layer base so that utilities still beat them; a bare
    `a { color }` outside a layer would override every text-* utility and

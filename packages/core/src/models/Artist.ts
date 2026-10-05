@@ -14,6 +14,26 @@ const ArtistSchema = new Schema(
      * default is null rather than "" to keep the falsy check unambiguous.
      */
     videoUrl: { type: String, default: null },
+
+    /**
+     * A video the artist has uploaded from their studio, awaiting the owner.
+     *
+     * Kept apart from videoUrl so the public site never has to know about
+     * review: it reads videoUrl and nothing else. Approving copies this
+     * across; until then a video already on the site stays up, so replacing
+     * one never leaves the profile without any.
+     */
+    pendingVideoUrl: { type: String, default: null },
+    videoReviewStatus: {
+      type: String,
+      enum: ["none", "pending", "rejected"],
+      default: "none",
+      index: true,
+    },
+    /** Shown back to the artist when a video is sent back. */
+    videoReviewNote: { type: String, default: "" },
+    videoSubmittedAt: { type: Date, default: null },
+
     /**
      * The owner's display choice, not a review state: an approved artist may
      * still be deliberately hidden. Kept separate from applicationStatus so

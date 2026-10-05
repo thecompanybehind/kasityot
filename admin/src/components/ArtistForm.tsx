@@ -149,7 +149,7 @@ export function ArtistForm({ artist }: { artist: ArtistView | null }) {
       <Field
         label="Video URL"
         htmlFor="videoUrl"
-        hint="Optional. Use a YouTube embed link. Left blank, the profile shows no video section at all — no empty space."
+        hint="Optional. A YouTube embed link, or the artist's own upload once you approve it under Submissions. Left blank, the profile shows no video section at all — no empty space."
       >
         <input
           id="videoUrl"

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArtistVideo } from "@/components/ArtistVideo";
 import { ArtworkCard } from "@/components/ArtworkCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Media } from "@/components/ui/Media";
@@ -113,15 +114,11 @@ export default async function ArtistPage({
           <div className="pb-8 font-mono text-label tracking-wide text-slate uppercase">
             <span className="rv-type inline-block">In the studio</span>
           </div>
-          <div className="rv-slant relative aspect-video w-full overflow-hidden bg-ink-raised [--rv-offset:200ms]">
-            <iframe
-              src={artist.videoUrl}
-              title={`${artist.name} at work`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="absolute inset-0 size-full border-0"
-            />
-          </div>
+          <ArtistVideo
+            url={artist.videoUrl}
+            name={artist.name}
+            className="rv-slant [--rv-offset:200ms]"
+          />
         </Reveal>
       ) : null}
 

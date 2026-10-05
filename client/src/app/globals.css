@@ -148,6 +148,18 @@
   input::placeholder {
     color: color-mix(in srgb, var(--color-bone) 45%, transparent);
   }
+
+  /* The open dropdown list is drawn by the browser, not by the select's own
+     transparent background, so it falls back to a white system popup unless
+     the options are given the ink ground themselves. */
+  select {
+    color-scheme: dark;
+  }
+
+  select option {
+    background: var(--color-ink-raised);
+    color: var(--color-bone);
+  }
 }
 
 /* ------------------------------------------------------------------

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createSession, getSession, verifyCredentials } from "@/lib/auth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { fieldClass, labelClass } from "@/components/ui";
 
 /**
@@ -30,7 +31,10 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="grid min-h-dvh place-items-center px-6 py-16">
+    <div className="relative grid min-h-dvh place-items-center px-6 py-16">
+      <div className="absolute top-5 right-[clamp(20px,4vw,44px)]">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-[420px]">
         <div className="flex items-center gap-3.5 pb-10">
           <Image
@@ -38,7 +42,7 @@ export default async function LoginPage({
             alt=""
             width={176}
             height={207}
-            className="h-[38px] w-auto"
+            className="logo-mark h-[38px] w-auto"
           />
           <span className="flex flex-col gap-[3px]">
             <span className="font-sans text-[12px] tracking-logo uppercase">

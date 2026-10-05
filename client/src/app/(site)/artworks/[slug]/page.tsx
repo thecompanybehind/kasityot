@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArtistVideo } from "@/components/ArtistVideo";
 import { ArtworkGallery } from "@/components/ArtworkGallery";
 import { ArtworkActions } from "@/components/ArtworkActions";
 import { CountUp } from "@/components/ui/CountUp";
@@ -58,12 +59,22 @@ const SPEC_STEP_MS = 120;
  * One row of the ruled specification table. The rule draws across, the
  * label rises behind it and the value slides in from the right-hand edge.
  */
-function Spec({ label, value, n }: { label: string; value: string; n: number }) {
+function Spec({
+  label,
+  value,
+  n,
+}: {
+  label: string;
+  value: string;
+  n: number;
+}) {
   return (
     <div
       className="relative flex items-baseline justify-between gap-6 overflow-hidden py-4.5 text-lede"
       style={
-        { "--rv-offset": `${SPECS_START_MS + n * SPEC_STEP_MS}ms` } as CSSProperties
+        {
+          "--rv-offset": `${SPECS_START_MS + n * SPEC_STEP_MS}ms`,
+        } as CSSProperties
       }
     >
       <span
@@ -146,7 +157,11 @@ export default async function ArtworkPage({
         {/* The photograph's cover draws aside; the details then assemble
             beside it, ending on the price counting up. */}
         <Reveal className="min-w-0">
-          <ArtworkGallery images={artwork.images} title={artwork.title} sold={sold} />
+          <ArtworkGallery
+            images={artwork.images}
+            title={artwork.title}
+            sold={sold}
+          />
         </Reveal>
 
         <Reveal className="min-w-0">
@@ -160,7 +175,9 @@ export default async function ArtworkPage({
 
           <h1 className="m-0 font-display text-section leading-[0.98] font-light tracking-section text-cream">
             <span className="mask-line">
-              <span className="rv-line [--rv-offset:120ms]">{artwork.title}</span>
+              <span className="rv-line [--rv-offset:120ms]">
+                {artwork.title}
+              </span>
             </span>
           </h1>
 
@@ -214,45 +231,67 @@ export default async function ArtworkPage({
             aria-hidden
             className="rv-rule absolute inset-x-0 top-0 h-px bg-brass/30"
           />
-          <div className="pb-8 font-mono text-label tracking-wide text-slate uppercase">
-            <span className="rv-type inline-block [--rv-offset:300ms]">
-              About the artist
-            </span>
-          </div>
-          <div className="flex flex-wrap items-start gap-(--spacing-gap-col)">
-            {artist.photo ? (
-              <div className="rv-pop relative size-24 shrink-0 overflow-hidden rounded-pill bg-ink-raised [--rv-offset:300ms]">
-                <Media src={artist.photo} alt={artist.name} sizes="96px" />
-              </div>
-            ) : null}
-            <div className="min-w-0 flex-1 basis-[280px]">
-              <div className="mask-line font-display text-card-title">
-                <span className="rv-line [--rv-offset:420ms]">
-                  <Link
-                    href={`/artists/${artist.slug}`}
-                    className="text-cream transition-colors hover:text-brass"
-                  >
-                    {artist.name}
-                  </Link>
+          {/*
+            The artist's one video sits beside their introduction on every
+            piece of theirs. Same rule as on their profile: no video means no
+            column at all — the introduction simply takes the full width.
+          */}
+          <div
+            className={
+              artist.videoUrl
+                ? "grid grid-cols-1 items-start gap-(--spacing-gap-wide) lg:grid-cols-2"
+                : undefined
+            }
+          >
+            <div className="min-w-0">
+              <div className="pb-8 font-mono text-label tracking-wide text-slate uppercase">
+                <span className="rv-type inline-block [--rv-offset:300ms]">
+                  About the artist
                 </span>
               </div>
-              <div className="pt-2 font-mono text-label-sm tracking-rail text-brass uppercase">
-                <span className="rv-type inline-block [--rv-offset:560ms]">
-                  {artist.craftType} · {artist.region}
-                </span>
-              </div>
-              <p className="rv-unroll m-0 line-clamp-4 max-w-[60ch] pt-4 text-body-sm leading-[1.7] text-bone-muted [--rv-offset:680ms]">
-                {artist.story}
-              </p>
-              <div className="rv-wipe [--rv-offset:1000ms]">
-                <Link
-                  href={`/artists/${artist.slug}`}
-                  className="mt-5 inline-block border-b border-brass/50 pb-[5px] font-mono text-label tracking-nav text-brass uppercase transition-colors hover:text-cream"
-                >
-                  See the full profile →
-                </Link>
+              <div className="flex flex-wrap items-start gap-(--spacing-gap-col)">
+                {artist.photo ? (
+                  <div className="rv-pop relative size-24 shrink-0 overflow-hidden rounded-pill bg-ink-raised [--rv-offset:300ms]">
+                    <Media src={artist.photo} alt={artist.name} sizes="96px" />
+                  </div>
+                ) : null}
+                <div className="min-w-0 flex-1 basis-[280px]">
+                  <div className="mask-line font-display text-card-title">
+                    <span className="rv-line [--rv-offset:420ms]">
+                      <Link
+                        href={`/artists/${artist.slug}`}
+                        className="text-cream transition-colors hover:text-brass"
+                      >
+                        {artist.name}
+                      </Link>
+                    </span>
+                  </div>
+                  <div className="pt-2 font-mono text-label-sm tracking-rail text-brass uppercase">
+                    <span className="rv-type inline-block [--rv-offset:560ms]">
+                      {artist.craftType} · {artist.region}
+                    </span>
+                  </div>
+                  <p className="rv-unroll m-0 line-clamp-4 max-w-[60ch] pt-4 text-body-sm leading-[1.7] text-bone-muted [--rv-offset:680ms]">
+                    {artist.story}
+                  </p>
+                  <div className="rv-wipe [--rv-offset:1000ms]">
+                    <Link
+                      href={`/artists/${artist.slug}`}
+                      className="mt-5 inline-block border-b border-brass/50 pb-[5px] font-mono text-label tracking-nav text-brass uppercase transition-colors hover:text-cream"
+                    >
+                      See the full profile →
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
+            {artist.videoUrl ? (
+              <ArtistVideo
+                url={artist.videoUrl}
+                name={artist.name}
+                className="rv-slant [--rv-offset:500ms]"
+              />
+            ) : null}
           </div>
         </Reveal>
       ) : null}

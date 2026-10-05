@@ -81,6 +81,29 @@ export async function notifyNewEnquiry(e: {
   );
 }
 
+export async function notifyOrderRequest(o: {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  amount: number;
+  artworkTitle: string;
+}): Promise<void> {
+  await send(
+    `New order request — ${o.artworkTitle}`,
+    shell(
+      row("Artwork", o.artworkTitle) +
+        row("Amount", formatPrice(o.amount)) +
+        row("Buyer", o.name) +
+        row("Phone", o.phone) +
+        row("Email", o.email) +
+        row("Address", o.address) +
+        row("Payment", "Not taken online — arrange with the buyer"),
+      "New order request",
+    ),
+  );
+}
+
 export async function notifyPaidOrder(o: {
   name: string;
   phone: string;

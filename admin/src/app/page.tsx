@@ -72,7 +72,7 @@ export default async function DashboardPage() {
           href="/enquiries?status=new"
           accent={stats.newEnquiries > 0}
         />
-        <Stat label="Paid orders" value={stats.paidOrders} href="/artworks" />
+        <Stat label="Orders" value={stats.orders} href="/customers" />
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,190px),1fr))] gap-5 pt-5">

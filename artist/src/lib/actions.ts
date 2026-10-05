@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connectDB, Artist, Artwork } from "@kasityot/core";
+import { VIDEO_FOLDER } from "@kasityot/core/video";
 import {
   createArtistSession,
   getArtistSession,
@@ -226,6 +227,73 @@ export async function saveProfile(form: FormData): Promise<ActionResult> {
     phone: str(form, "phone") || null,
   });
 
+  revalidatePath("/studio/profile");
+  return { ok: true };
+}
+
+/**
+ * Sends the artist's video to the owner for review.
+ *
+ * Unlike the rest of the profile this does not go live on save: it lands in
+ * pendingVideoUrl, and only the owner's approval copies it to the field the
+ * public site reads. A video already on the site stays up meanwhile.
+ *
+ * The URL comes from the browser, which uploaded the file itself, so it is
+ * checked rather than trusted: it must be a video in this account's own
+ * Cloudinary folder. Without that an artist could point their profile at any
+ * address at all.
+ */
+export async function submitVideo(url: string): Promise<ActionResult> {
+  const artistId = await requireArtist();
+
+  const cloud = process.env.CLOUDINARY_CLOUD_NAME;
+  const prefix = `https://res.cloudinary.com/${cloud}/video/upload/`;
+  if (!cloud || !url.startsWith(prefix) || !url.includes(`/${VIDEO_FOLDER}/`)) {
+    return { ok: false, error: "That video could not be accepted." };
+  }
+
+  await connectDB();
+  const saved = await Artist.findByIdAndUpdate(
+    artistId,
+    {
+      pendingVideoUrl: url,
+      videoReviewStatus: "pending",
+      videoReviewNote: "",
+      videoSubmittedAt: new Date(),
+    },
+    { returnDocument: "after" },
+  )
+    .select("pendingVideoUrl")
+    .lean();
+
+  // Read back rather than assumed. Mongoose silently drops fields its schema
+  // does not know, and a server still holding an older copy of the Artist
+  // model would otherwise report success having saved nothing.
+  if (saved?.pendingVideoUrl !== url) {
+    return {
+      ok: false,
+      error: "The video uploaded but could not be saved. Please try again shortly.",
+    };
+  }
+
+  revalidatePath("/studio");
+  revalidatePath("/studio/profile");
+  return { ok: true };
+}
+
+/** Takes a video back out of the owner's queue before it is decided on. */
+export async function withdrawVideo(): Promise<ActionResult> {
+  const artistId = await requireArtist();
+  await connectDB();
+
+  // Matched on "pending" so a decision the owner made a moment ago is not
+  // overwritten by a stale page.
+  await Artist.updateOne(
+    { _id: artistId, videoReviewStatus: "pending" },
+    { pendingVideoUrl: null, videoReviewStatus: "none", videoSubmittedAt: null },
+  );
+
+  revalidatePath("/studio");
   revalidatePath("/studio/profile");
   return { ok: true };
 }

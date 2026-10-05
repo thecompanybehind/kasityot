@@ -25,6 +25,11 @@ export type ArtistView = {
   region: string;
   story: string;
   videoUrl: string | null;
+  /** A video the artist uploaded that is awaiting, or failed, review. */
+  pendingVideoUrl: string | null;
+  videoReviewStatus: "none" | "pending" | "rejected";
+  videoReviewNote: string;
+  videoSubmittedAt: string | null;
   status: "visible" | "hidden";
   artworkCount?: number;
   applicationStatus: "pending" | "approved" | "rejected";
@@ -92,6 +97,11 @@ function toArtist(doc: Raw): ArtistView {
     region: doc.region as string,
     story: doc.story as string,
     videoUrl: (doc.videoUrl as string) ?? null,
+    pendingVideoUrl: (doc.pendingVideoUrl as string) ?? null,
+    videoReviewStatus:
+      (doc.videoReviewStatus as ArtistView["videoReviewStatus"]) ?? "none",
+    videoReviewNote: (doc.videoReviewNote as string) ?? "",
+    videoSubmittedAt: iso(doc.videoSubmittedAt),
     status: doc.status as ArtistView["status"],
     // Rows predating the review fields have no value; they read as approved,
     // matching both the backfill and what the public site does.
@@ -158,28 +168,32 @@ export async function getDashboardStats() {
     artworks,
     artists,
     newEnquiries,
-    paidOrders,
+    orders,
     available,
     sold,
     pendingApplications,
-    pendingSubmissions,
+    pendingArtworks,
+    pendingVideos,
   ] = await Promise.all([
     Artwork.countDocuments(),
     Artist.countDocuments(),
     Enquiry.countDocuments({ status: "new" }),
-    Order.countDocuments({ status: "paid" }),
+    Order.countDocuments({ status: { $in: PURCHASE_STATUSES } }),
     Artwork.countDocuments({ status: "available" }),
     Artwork.countDocuments({ status: "sold" }),
     // Surfaced on the dashboard and in the nav: an unnoticed queue is the
     // main failure mode of a design where nothing goes live without review.
     Artist.countDocuments({ applicationStatus: "pending" }),
     Artwork.countDocuments({ reviewStatus: "pending" }),
+    Artist.countDocuments({ videoReviewStatus: "pending" }),
   ]);
+  // Videos are reviewed on the submissions page, so they count towards it.
+  const pendingSubmissions = pendingArtworks + pendingVideos;
   return {
     artworks,
     artists,
     newEnquiries,
-    paidOrders,
+    orders,
     available,
     sold,
     pendingApplications,
@@ -198,11 +212,13 @@ export async function getQueueCounts(): Promise<{
   submissions: number;
 }> {
   await connectDB();
-  const [applications, submissions] = await Promise.all([
+  const [applications, artworks, videos] = await Promise.all([
     Artist.countDocuments({ applicationStatus: "pending" }),
     Artwork.countDocuments({ reviewStatus: "pending" }),
+    Artist.countDocuments({ videoReviewStatus: "pending" }),
   ]);
-  return { applications, submissions };
+  // Videos are reviewed on the submissions page, so they share its badge.
+  return { applications, submissions: artworks + videos };
 }
 
 /**
@@ -269,6 +285,23 @@ export async function getSubmissions(
     .sort({ wasApproved: -1, submittedAt: 1 })
     .lean();
   return docs.map(toArtwork);
+}
+
+/**
+ * Artists whose video is waiting on the owner, longest wait first.
+ *
+ * Only ever pending: an approved video is simply the artist's video, and a
+ * rejected one is with the artist.
+ */
+export async function getVideoSubmissions(): Promise<ArtistView[]> {
+  await connectDB();
+  const docs = await Artist.find({
+    videoReviewStatus: "pending",
+    pendingVideoUrl: { $ne: null },
+  })
+    .sort({ videoSubmittedAt: 1 })
+    .lean();
+  return docs.map(toArtist);
 }
 
 export async function getRecentEnquiries(limit = 5): Promise<EnquiryView[]> {
@@ -339,6 +372,85 @@ export async function getEnquiries(filters?: {
     .sort({ createdAt: -1 })
     .lean();
   return docs.map(toEnquiry);
+}
+
+/* ---------------------------------------------------------------- *
+ * Customers
+ * ---------------------------------------------------------------- */
+
+export type CustomerOrderView = {
+  id: string;
+  artworkId: string | null;
+  artworkTitle: string | null;
+  amount: number;
+  status: "requested" | "paid";
+  createdAt: string;
+};
+
+export type CustomerView = {
+  /** The buyer's email, which is what groups their orders together. */
+  email: string;
+  name: string;
+  phone: string;
+  address: string;
+  orders: CustomerOrderView[];
+  totalAmount: number;
+  lastOrderAt: string;
+};
+
+/**
+ * Orders that count as a purchase: a request placed without payment, or a
+ * paid Razorpay order. An abandoned or failed checkout is not a customer.
+ */
+const PURCHASE_STATUSES = ["requested", "paid"] as const;
+
+/**
+ * Everyone who has ever bought, most recent buyer first, with one entry per
+ * person however many pieces they ordered.
+ *
+ * Grouped by email. Name, phone and address come from their latest order,
+ * since that is the one most likely to still be right.
+ */
+export async function getCustomers(): Promise<CustomerView[]> {
+  await connectDB();
+  const docs = await Order.find({ status: { $in: PURCHASE_STATUSES } })
+    .populate("artworkId", "title")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const byEmail = new Map<string, CustomerView>();
+  for (const doc of docs as Raw[]) {
+    const a = doc.artworkId as Raw | null;
+    const populated = a && typeof a === "object" && "title" in a;
+    const createdAt = new Date(doc.createdAt as string).toISOString();
+    const order: CustomerOrderView = {
+      id: String(doc._id),
+      artworkId: populated ? String(a._id) : null,
+      artworkTitle: populated ? (a.title as string) : null,
+      amount: doc.amount as number,
+      status: doc.status as CustomerOrderView["status"],
+      createdAt,
+    };
+
+    const email = doc.email as string;
+    const customer = byEmail.get(email);
+    if (customer) {
+      customer.orders.push(order);
+      customer.totalAmount += order.amount;
+    } else {
+      // Newest first, so the first order seen for an email is their latest.
+      byEmail.set(email, {
+        email,
+        name: doc.name as string,
+        phone: doc.phone as string,
+        address: doc.address as string,
+        orders: [order],
+        totalAmount: order.amount,
+        lastOrderAt: createdAt,
+      });
+    }
+  }
+  return [...byEmail.values()];
 }
 
 /** Lightweight list for the enquiry filter dropdown. */

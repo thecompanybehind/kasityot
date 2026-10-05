@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
   { label: "Dashboard", href: "/" },
@@ -13,6 +14,7 @@ const NAV = [
   { label: "Submissions", href: "/submissions", badge: "submissions" },
   { label: "Banner", href: "/hero" },
   { label: "Enquiries", href: "/enquiries" },
+  { label: "Customers", href: "/customers" },
 ] as const;
 
 /**
@@ -49,7 +51,7 @@ export function AdminShell({
               alt=""
               width={176}
               height={207}
-              className="h-[34px] w-auto"
+              className="logo-mark h-[34px] w-auto"
             />
             <span className="flex flex-col gap-[3px]">
               <span className="font-sans text-[12px] tracking-logo uppercase">
@@ -90,6 +92,7 @@ export function AdminShell({
             <span className="hidden font-mono text-label-sm tracking-rail text-slate uppercase lg:inline">
               {email}
             </span>
+            <ThemeToggle />
             <form action="/api/logout" method="post">
               <button
                 type="submit"

@@ -173,6 +173,62 @@ export async function emailArtworkApproved(opts: {
   );
 }
 
+/** Told when their video goes up, so they can see it on their page. */
+export async function emailVideoApproved(opts: {
+  to: string;
+  name: string;
+  url?: string;
+}): Promise<SendResult> {
+  return send(
+    opts.to,
+    "Your video is on the site",
+    shell(`
+      <h2 style="font-weight:400;font-size:22px;margin:0 0 16px">
+        Your video is live
+      </h2>
+      <p style="margin:0 0 20px">
+        ${esc(opts.name)}, we have put your video up. It now appears on your
+        page and beneath each of your pieces.
+      </p>
+      ${
+        opts.url
+          ? `<p style="margin:0 0 20px"><a href="${esc(opts.url)}" style="color:#8a6a35">See your page</a></p>`
+          : ""
+      }
+      <p style="margin:0;font-size:13px;color:#6a6157">
+        To replace it, send a different one from your profile in the studio.
+      </p>
+    `),
+  );
+}
+
+/** A video sent back, with what needs doing. */
+export async function emailVideoRejected(opts: {
+  to: string;
+  name: string;
+  reason: string;
+}): Promise<SendResult> {
+  return send(
+    opts.to,
+    "Your video — a change before we put it up",
+    shell(`
+      <h2 style="font-weight:400;font-size:22px;margin:0 0 16px">
+        One thing on your video
+      </h2>
+      <p style="margin:0 0 20px">
+        ${esc(opts.name)}, we would like to show your video, but something needs
+        changing first:
+      </p>
+      <blockquote style="margin:0 0 20px;padding:12px 18px;border-left:2px solid #8a6a35;background:#faf7f1">
+        ${esc(opts.reason)}
+      </blockquote>
+      <p style="margin:0">
+        Open your profile in the studio and send another.
+      </p>
+    `),
+  );
+}
+
 /** Sent back for changes, with what needs doing. */
 export async function emailArtworkRejected(opts: {
   to: string;

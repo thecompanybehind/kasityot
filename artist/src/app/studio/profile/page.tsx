@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { ProfileForm } from "@/components/ProfileForm";
 import { StudioShell } from "@/components/StudioShell";
 import { PageHeading, Rule } from "@/components/ui";
+import { VideoField } from "@/components/VideoField";
 import { getArtistSession } from "@/lib/auth";
 import { getMyProfile } from "@/lib/queries";
 
@@ -26,6 +27,10 @@ export default async function ProfilePage() {
 
       <div className="pt-8">
         <ProfileForm artist={me} />
+      </div>
+
+      <div className="mt-12 border-t border-bone/12 pt-10">
+        <VideoField artist={me} />
       </div>
     </StudioShell>
   );

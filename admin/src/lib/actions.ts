@@ -16,6 +16,8 @@ import {
   emailArtistRejection,
   emailArtworkApproved,
   emailArtworkRejected,
+  emailVideoApproved,
+  emailVideoRejected,
 } from "@/lib/notify";
 import { getSession } from "@/lib/auth";
 
@@ -221,6 +223,7 @@ export async function saveArtwork(
   try {
     if (id) {
       const slug = await uniqueSlug(title, Artwork, id);
+      await showArtistOnFirstPiece(id);
       // runValidators keeps the price/priceOnRequest rule alive on update;
       // findByIdAndUpdate skips schema validation by default.
       await Artwork.findByIdAndUpdate(
@@ -417,6 +420,41 @@ export async function resendArtistInvite(id: string): Promise<InviteResult> {
  * ---------------------------------------------------------------- */
 
 /**
+ * Applicants are created hidden, and the public site drops every piece by a
+ * hidden artist — so without this an artist's first approved piece would be
+ * approved and still invisible. Their page goes up with their first piece.
+ *
+ * Deliberately narrow, so it cannot undo the owner hiding someone on purpose:
+ * only a studio submission, only one that was never live before, and only
+ * when the artist has no other approved work. Must run before the piece
+ * itself is marked approved, while its prior state can still be read.
+ */
+async function showArtistOnFirstPiece(artworkId: string): Promise<void> {
+  const art = await Artwork.findById(artworkId)
+    .select("artistId submittedByArtist reviewStatus wasApproved")
+    .lean();
+  if (!art?.submittedByArtist || art.wasApproved) return;
+  if (art.reviewStatus === "approved") return;
+
+  const others = await Artwork.countDocuments({
+    artistId: art.artistId,
+    _id: { $ne: artworkId },
+    reviewStatus: "approved",
+  });
+  if (others > 0) return;
+
+  await Artist.updateOne(
+    {
+      _id: String(art.artistId),
+      status: "hidden",
+      applicationStatus: "approved",
+    },
+    { status: "visible" },
+  );
+  revalidatePath("/artists");
+}
+
+/**
  * Approving a submission puts it on the public site.
  *
  * wasApproved is cleared because it exists only to mark "was live, now
@@ -430,6 +468,8 @@ export async function approveArtwork(id: string): Promise<ActionResult> {
     .select("title slug artistId submittedByArtist")
     .lean();
   if (!art) return { ok: false, error: "That piece no longer exists." };
+
+  await showArtistOnFirstPiece(id);
 
   await Artwork.findByIdAndUpdate(id, {
     reviewStatus: "approved",
@@ -506,6 +546,94 @@ export async function rejectArtwork(
 /* ---------------------------------------------------------------- *
  * Enquiries
  * ---------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------- *
+ * Artist videos
+ * ---------------------------------------------------------------- */
+
+/**
+ * Approving a video makes it the artist's video: it is copied to the field
+ * the public site reads, replacing whatever was there, and appears on their
+ * profile and beneath each of their pieces.
+ *
+ * The update is matched on the URL the owner was shown, not just the id, so
+ * approving from a stale page cannot publish a video the artist has since
+ * withdrawn or replaced — one the owner never watched.
+ */
+export async function approveVideo(
+  artistId: string,
+  url: string,
+): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+
+  const artist = await Artist.findOneAndUpdate(
+    { _id: artistId, videoReviewStatus: "pending", pendingVideoUrl: url },
+    {
+      videoUrl: url,
+      pendingVideoUrl: null,
+      videoReviewStatus: "none",
+      videoReviewNote: "",
+    },
+  )
+    .select("email name slug")
+    .lean();
+  if (!artist) {
+    return {
+      ok: false,
+      error: "That video has changed since this page loaded. Refresh and look again.",
+    };
+  }
+
+  if (artist.email) {
+    const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+    await emailVideoApproved({
+      to: artist.email as string,
+      name: artist.name as string,
+      url: site ? `${site}/artists/${artist.slug}` : undefined,
+    });
+  }
+
+  revalidatePath("/submissions");
+  revalidatePath("/artists");
+  return { ok: true };
+}
+
+/** Sends a video back. A video already on the site is left exactly as it is. */
+export async function rejectVideo(
+  artistId: string,
+  note: string,
+): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+
+  const trimmed = note.trim();
+  if (!trimmed) {
+    return {
+      ok: false,
+      error: "Give a reason — the artist is shown this, so it should help them.",
+    };
+  }
+
+  const artist = await Artist.findOneAndUpdate(
+    { _id: artistId, videoReviewStatus: "pending" },
+    { videoReviewStatus: "rejected", videoReviewNote: trimmed },
+  )
+    .select("email name")
+    .lean();
+  if (!artist) return { ok: false, error: "That video is no longer waiting." };
+
+  if (artist.email) {
+    await emailVideoRejected({
+      to: artist.email as string,
+      name: artist.name as string,
+      reason: trimmed,
+    });
+  }
+
+  revalidatePath("/submissions");
+  return { ok: true };
+}
 
 export async function setEnquiryStatus(
   id: string,

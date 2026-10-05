@@ -24,6 +24,12 @@ export type StudioArtist = {
   status: "visible" | "hidden";
   applicationStatus: "pending" | "approved" | "rejected";
   reviewNote: string;
+  /** The video on the public site, if any. */
+  videoUrl: string | null;
+  /** The video awaiting the owner, or the one last sent back. */
+  pendingVideoUrl: string | null;
+  videoReviewStatus: "none" | "pending" | "rejected";
+  videoReviewNote: string;
 };
 
 export type StudioArtwork = {
@@ -66,6 +72,12 @@ function toArtist(doc: Raw): StudioArtist {
     applicationStatus:
       (doc.applicationStatus as StudioArtist["applicationStatus"]) ?? "approved",
     reviewNote: (doc.reviewNote as string) ?? "",
+    videoUrl: (doc.videoUrl as string) ?? null,
+    pendingVideoUrl: (doc.pendingVideoUrl as string) ?? null,
+    // Rows predating the field have no value; they have nothing in review.
+    videoReviewStatus:
+      (doc.videoReviewStatus as StudioArtist["videoReviewStatus"]) ?? "none",
+    videoReviewNote: (doc.videoReviewNote as string) ?? "",
   };
 }
 

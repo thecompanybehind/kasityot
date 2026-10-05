@@ -63,6 +63,31 @@ export default async function StudioPage() {
             add it here and we will take a look.
           </p>
         )}
+
+        {/* The video lives on the profile page, where it is easy to miss. */}
+        {me.videoReviewStatus === "rejected" ? (
+          <p className="m-0 pt-5">
+            We sent your video back.{" "}
+            <Link
+              href="/studio/profile"
+              className="text-brass underline underline-offset-4 hover:text-cream"
+            >
+              Read why and send another
+            </Link>
+            .
+          </p>
+        ) : !me.videoUrl && me.videoReviewStatus === "none" ? (
+          <p className="m-0 pt-5">
+            Buyers like to see the hand at work.{" "}
+            <Link
+              href="/studio/profile"
+              className="text-brass underline underline-offset-4 hover:text-cream"
+            >
+              Add a short video of you making something
+            </Link>
+            .
+          </p>
+        ) : null}
       </div>
     </StudioShell>
   );

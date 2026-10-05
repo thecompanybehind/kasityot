@@ -3,7 +3,12 @@ import { AdminShell } from "@/components/AdminShell";
 import { SubmissionRow } from "@/components/SubmissionRow";
 import { Empty, PageHeading, Rule } from "@/components/ui";
 import { getSession } from "@/lib/auth";
-import { getQueueCounts, getSubmissions } from "@/lib/queries";
+import { VideoSubmissionRow } from "@/components/VideoSubmissionRow";
+import {
+  getQueueCounts,
+  getSubmissions,
+  getVideoSubmissions,
+} from "@/lib/queries";
 
 /**
  * The artwork review queue.
@@ -26,10 +31,11 @@ export default async function SubmissionsPage({
     status === "approved" || status === "rejected" ? status : "pending";
 
   const submissions = await getSubmissions(filter);
-  const pendingCount =
-    filter === "pending"
-      ? submissions.length
-      : (await getSubmissions("pending")).length;
+  // Videos have no approved or rejected tab of their own: an approved one is
+  // simply the artist's video, and a rejected one is back with the artist.
+  const videos = filter === "pending" ? await getVideoSubmissions() : [];
+  // The nav badge already counts both kinds of pending work.
+  const pendingCount = queues.submissions;
 
   const TABS = [
     {
@@ -81,12 +87,28 @@ export default async function SubmissionsPage({
       </nav>
 
       <div className="pt-4">
-        {submissions.length === 0 ? (
+        {videos.length ? (
+          <section className="pb-6">
+            <h2 className="m-0 pt-4 font-mono text-label tracking-wide text-slate uppercase">
+              Artist videos
+            </h2>
+            {videos.map((a) => (
+              <VideoSubmissionRow key={a.id} artist={a} />
+            ))}
+            {submissions.length ? (
+              <h2 className="m-0 pt-8 font-mono text-label tracking-wide text-slate uppercase">
+                Pieces
+              </h2>
+            ) : null}
+          </section>
+        ) : null}
+
+        {submissions.length === 0 && videos.length === 0 ? (
           <Empty
             title="Nothing here"
             body={
               filter === "pending"
-                ? "When an artist submits a piece from their studio, it waits here until you approve it."
+                ? "When an artist submits a piece or a video from their studio, it waits here until you approve it."
                 : "No pieces in this state."
             }
           />

@@ -11,6 +11,10 @@ type Props = {
   priceOnRequest: boolean;
 };
 
+/* RAZORPAY — online payment is switched off for now; a buyer places an order
+   request instead and the owner follows up. Restore the commented blocks
+   marked RAZORPAY here and in src/app/api/checkout/route.ts to bring it back.
+
 type RazorpayResponse = {
   razorpay_order_id: string;
   razorpay_payment_id: string;
@@ -25,13 +29,15 @@ declare global {
     };
   }
 }
+*/
 
 const field =
   "w-full min-w-0 border border-brass/35 bg-transparent px-4 py-3 text-body text-bone outline-none transition-colors focus:border-brass";
 const label =
   "block pb-2 font-mono text-label-sm tracking-rail text-slate uppercase";
 
-/** Razorpay's script is only pulled in when the buyer opens checkout. */
+/* RAZORPAY
+// Razorpay's script is only pulled in when the buyer opens checkout.
 function loadRazorpay(): Promise<boolean> {
   return new Promise((resolve) => {
     if (window.Razorpay) return resolve(true);
@@ -42,6 +48,7 @@ function loadRazorpay(): Promise<boolean> {
     document.body.appendChild(script);
   });
 }
+*/
 
 export function ArtworkActions({
   artworkId,
@@ -57,7 +64,7 @@ export function ArtworkActions({
   // A sold piece can be neither bought nor enquired on.
   if (sold) return null;
 
-  async function pay(formData: FormData) {
+  async function placeOrder(formData: FormData) {
     setBusy(true);
     setError(null);
     try {
@@ -73,8 +80,11 @@ export function ArtworkActions({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not start payment.");
+      if (!res.ok) throw new Error(data.error ?? "Could not place your order.");
 
+      router.push("/order/requested");
+
+      /* RAZORPAY — restore in place of the router.push above.
       if (!(await loadRazorpay())) {
         throw new Error("Could not reach the payment window. Check your connection.");
       }
@@ -116,6 +126,7 @@ export function ArtworkActions({
         router.push("/order/failed?reason=declined");
       });
       rzp.open();
+      */
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);
@@ -134,7 +145,7 @@ export function ArtworkActions({
                 onClick={() => setPanel("buy")}
                 className="cursor-pointer border-none bg-brass px-[34px] py-[17px] font-mono text-label tracking-label text-ink uppercase transition-colors duration-200 hover:bg-cream"
               >
-                Buy online
+                Order this piece
               </button>
             )}
             <button
@@ -172,7 +183,8 @@ export function ArtworkActions({
             Where should we send it?
           </h2>
           <p className="m-0 pb-6 text-body-sm leading-[1.7] text-bone-muted">
-            We will confirm delivery with you by phone after the payment.
+            Nothing is charged now. We will call you to confirm the order and
+            arrange payment and delivery.
           </p>
 
           {error ? (
@@ -184,7 +196,7 @@ export function ArtworkActions({
             </div>
           ) : null}
 
-          <form action={pay} className="flex flex-col gap-5">
+          <form action={placeOrder} className="flex flex-col gap-5">
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
                 <label htmlFor="bu-name" className={label}>
@@ -239,7 +251,7 @@ export function ArtworkActions({
                 disabled={busy}
                 className="cursor-pointer border-none bg-brass px-[34px] py-[17px] font-mono text-label tracking-label text-ink uppercase transition-colors hover:bg-cream disabled:cursor-wait disabled:opacity-60"
               >
-                {busy ? "Opening payment…" : "Continue to payment"}
+                {busy ? "Placing order…" : "Place order request"}
               </button>
               <button
                 type="button"

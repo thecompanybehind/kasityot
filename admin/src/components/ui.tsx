@@ -64,6 +64,9 @@ export function StatusPill({ status }: { status: string }) {
     new: "border-brass text-brass",
     contacted: "border-bone/30 text-bone-soft",
     closed: "border-bone/20 text-slate",
+    // Orders. A request still needs the owner to call the buyer.
+    requested: "border-brass text-brass",
+    paid: "border-bone/30 text-bone-soft",
     // Review states. Pending is the only one calling for the owner to act,
     // so it is the only one that fills rather than outlines.
     pending: "border-brass bg-brass/15 text-brass",

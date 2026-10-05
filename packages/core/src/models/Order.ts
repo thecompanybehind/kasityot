@@ -21,12 +21,20 @@ const OrderSchema = new Schema(
     address: { type: String, required: true },
     /** Paise, matching Razorpay's smallest-unit convention. */
     amount: { type: Number, required: true, min: 0 },
-    /** Sparse: unset until the Razorpay order is created in Phase 4. */
-    razorpayOrderId: { type: String, default: null, unique: true, sparse: true },
+    /**
+     * Sparse, and deliberately without a default: a sparse index still indexes
+     * an explicit null, so a default of null would let only one order request
+     * exist. Left unset, any number of requests can carry no Razorpay id.
+     */
+    razorpayOrderId: { type: String, unique: true, sparse: true },
     razorpayPaymentId: { type: String, default: null },
+    /**
+     * "requested" is an order placed without payment, which the owner follows
+     * up by hand. "created" → "paid" / "failed" is the Razorpay flow.
+     */
     status: {
       type: String,
-      enum: ["created", "paid", "failed"],
+      enum: ["requested", "created", "paid", "failed"],
       default: "created",
       index: true,
     },
