@@ -279,7 +279,8 @@ wholesaler panel.
 2. Fill in the title and description. Category, material, dimensions and
    minimum order are optional.
 3. **Trade price per unit** is optional too, and usually left blank. Blank
-   shows **Price on enquiry**, and buyers then ask you for a figure.
+   shows **Contact for price**, with call, WhatsApp and email buttons
+   (taken from the **Contact** page), and buyers then ask you for a figure.
 4. Add photographs the same way as for artwork, and save.
 
 Use **Hide** to take a product off the wholesaler panel without deleting it.

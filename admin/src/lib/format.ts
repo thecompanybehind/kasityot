@@ -15,7 +15,7 @@ export function formatPrice(paise: number | null): string {
 /** A wholesale unit price. Blank is the norm there, and reads as an invitation. */
 export function formatTradePrice(paise: number | null): string {
   return paise === null || paise === undefined
-    ? "Price on enquiry"
+    ? "Contact for price"
     : `${formatPrice(paise)} / unit`;
 }
 

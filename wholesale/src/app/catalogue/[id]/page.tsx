@@ -7,7 +7,8 @@ import { WholesaleShell } from "@/components/WholesaleShell";
 import { Rule } from "@/components/ui";
 import { getWholesaler } from "@/lib/auth";
 import { formatTradePrice } from "@/lib/format";
-import { getProduct } from "@/lib/queries";
+import { telHref } from "@kasityot/core/contact";
+import { getContactInfo, getProduct } from "@/lib/queries";
 
 export default async function ProductPage({
   params,
@@ -21,6 +22,8 @@ export default async function ProductPage({
   const { id } = await params;
   const product = await getProduct(id);
   if (!product) notFound();
+  const contact = product.price === null ? await getContactInfo() : null;
+  const ask = `Hello, I would like the trade price for "${product.title}".`;
 
   const specs = [
     ["Category", product.category],
@@ -67,6 +70,33 @@ export default async function ProductPage({
           <div className="pt-5 font-display text-[clamp(24px,2.2vw,32px)] text-brass">
             {formatTradePrice(product.price)}
           </div>
+
+          {/* No price: the buyer reaches us directly, with the product named. */}
+          {contact ? (
+            <div className="flex flex-wrap gap-3 pt-5">
+              {[
+                ["Call", telHref(contact.phone)],
+                [
+                  "WhatsApp",
+                  `https://wa.me/${telHref(contact.phone).replace(/\D/g, "")}?text=${encodeURIComponent(ask)}`,
+                ],
+                [
+                  "Email",
+                  `mailto:${contact.email}?subject=${encodeURIComponent(`Price: ${product.title}`)}&body=${encodeURIComponent(ask)}`,
+                ],
+              ].map(([label, href]) => (
+                <a
+                  key={label}
+                  href={href}
+                  target={label === "WhatsApp" ? "_blank" : undefined}
+                  rel={label === "WhatsApp" ? "noopener noreferrer" : undefined}
+                  className="border border-brass/45 px-5 py-3 font-mono text-label tracking-label text-brass uppercase transition-colors hover:bg-brass hover:text-ink"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          ) : null}
 
           <p className="m-0 pt-6 text-body leading-[1.8] whitespace-pre-line text-bone-muted">
             {product.description}

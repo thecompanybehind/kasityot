@@ -112,7 +112,7 @@ export function WholesaleProductForm({
         <Field
           label="Trade price per unit (₹)"
           htmlFor="price"
-          hint="Optional. Leave blank and wholesalers see “Price on enquiry”."
+          hint="Optional. Leave blank and wholesalers see “Contact for price” with your phone, WhatsApp and email."
         >
           <input
             id="price"

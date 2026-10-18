@@ -153,6 +153,9 @@
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
+    /* Native controls (a select's open list, scrollbars) follow this, so
+       they draw dark rather than white. The light theme sets its own. */
+    color-scheme: dark;
   }
 
   body {
@@ -174,6 +177,13 @@
 
   input::placeholder {
     color: color-mix(in srgb, var(--color-bone) 45%, transparent);
+  }
+
+  /* A select's open list is drawn by the OS; give its options the panel's
+     ground and text so it matches, in either theme. */
+  select option {
+    background-color: var(--color-ink-raised);
+    color: var(--color-bone);
   }
 }
 

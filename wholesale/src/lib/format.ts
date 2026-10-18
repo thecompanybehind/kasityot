@@ -13,7 +13,7 @@ function rupees(paise: number): string {
 /** A trade unit price. Most are blank, which reads as an invitation to ask. */
 export function formatTradePrice(paise: number | null): string {
   return paise === null || paise === undefined
-    ? "Price on enquiry"
+    ? "Contact for price"
     : `${rupees(paise)} / unit`;
 }
 

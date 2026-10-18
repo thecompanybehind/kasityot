@@ -1,5 +1,6 @@
 import { isValidObjectId } from "mongoose";
-import { connectDB } from "@kasityot/core";
+import { ContactSettings, connectDB } from "@kasityot/core";
+import { CONTACT_DEFAULTS, type ContactInfo } from "@kasityot/core/contact";
 import { WholesaleEnquiry, WholesaleProduct } from "@kasityot/core/wholesale";
 
 /**
@@ -99,4 +100,17 @@ export async function getMyEnquiries(
       createdAt: new Date(d.createdAt as unknown as string).toISOString(),
     };
   });
+}
+
+/**
+ * The shop's contact details, as the owner set them on the panel's Contact
+ * page, each blank one filled from the defaults. Shown beside a product with
+ * no price, so a buyer can call or write instead of waiting on a form.
+ */
+export async function getContactInfo(): Promise<ContactInfo> {
+  await connectDB();
+  const doc = await ContactSettings.findOne().lean();
+  const pick = (key: keyof ContactInfo) =>
+    ((doc?.[key] as string | undefined) ?? "").trim() || CONTACT_DEFAULTS[key];
+  return { email: pick("email"), phone: pick("phone"), address: pick("address") };
 }
