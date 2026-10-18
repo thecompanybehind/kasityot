@@ -18,7 +18,7 @@ Implement: `Kasityot Landing v2.dc.html`
 ---
 
 ## Context
-
+ 
 Kasityot is a handicraft marketplace for a client in India. Artists make one-of-a-kind handmade pieces. The site shows the artwork and the artist behind it. A buyer can either pay online or send an enquiry. Every enquiry and order lands in a single admin panel that only the owner uses. The owner then contacts the artist and settles delivery offline.
 
 There is **no artist login in this version**. Artists never see the panel. The owner adds artists and artwork himself.
