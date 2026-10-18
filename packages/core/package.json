@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./video": "./src/video.ts",
-    "./about": "./src/about.ts"
+    "./about": "./src/about.ts",
+    "./wholesale": "./src/wholesale.ts"
   },
   "scripts": {
     "backfill": "tsx scripts/backfill-status.ts"

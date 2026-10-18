@@ -229,6 +229,64 @@ export async function emailVideoRejected(opts: {
   );
 }
 
+/** A wholesaler's account is open: the trade catalogue and its prices. */
+export async function emailWholesalerApproved(opts: {
+  to: string;
+  name: string;
+  business: string;
+  url?: string;
+}): Promise<SendResult> {
+  return send(
+    opts.to,
+    "Your Kasityot trade account is open",
+    shell(`
+      <h2 style="font-weight:400;font-size:22px;margin:0 0 16px">
+        Welcome, ${esc(opts.name)}
+      </h2>
+      <p style="margin:0 0 20px">
+        We have approved the trade account for ${esc(opts.business)}. Sign in
+        with the email and password you registered with to see the wholesale
+        catalogue and send us enquiries.
+      </p>
+      ${
+        opts.url
+          ? `<p style="margin:0 0 24px"><a href="${esc(opts.url)}" style="display:inline-block;background:#1a1613;color:#f6f1e7;padding:14px 26px;text-decoration:none;font-size:14px;letter-spacing:0.08em;text-transform:uppercase">Sign in</a></p>`
+          : ""
+      }
+      <p style="margin:0;font-size:13px;color:#6a6157">
+        Most trade prices are on enquiry. Ask about any product and we will
+        come back to you with a figure for your quantity.
+      </p>
+    `),
+  );
+}
+
+/** A registration turned down, or access withdrawn, with the owner's reason. */
+export async function emailWholesalerRejected(opts: {
+  to: string;
+  name: string;
+  reason: string;
+}): Promise<SendResult> {
+  return send(
+    opts.to,
+    "About your Kasityot trade account",
+    shell(`
+      <h2 style="font-weight:400;font-size:22px;margin:0 0 16px">
+        Thank you for your interest, ${esc(opts.name)}
+      </h2>
+      <p style="margin:0 0 20px">
+        We are not able to open a trade account for you at the moment:
+      </p>
+      <blockquote style="margin:0 0 20px;padding:12px 18px;border-left:2px solid #8a6a35;background:#faf7f1">
+        ${esc(opts.reason)}
+      </blockquote>
+      <p style="margin:0">
+        If something here is not right, reply to this email and tell us.
+      </p>
+    `),
+  );
+}
+
 /** Sent back for changes, with what needs doing. */
 export async function emailArtworkRejected(opts: {
   to: string;

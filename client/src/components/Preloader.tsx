@@ -8,6 +8,8 @@ const NAME = "käsityöt";
 
 /** The counter never finishes sooner than this, so the opening can be read. */
 const MIN_MS = 3200;
+/** The calmer, fade-only opening for a reduced-motion preference is shorter. */
+const MIN_MS_REDUCED = 1800;
 /** Past this, the page is shown whatever is still loading. */
 const MAX_MS = 9000;
 /** How long the sheet takes to leave (matches kSheetExit plus its delay). */
@@ -15,6 +17,13 @@ const EXIT_MS = 1500;
 
 /** Fired on window when the sheet starts to lift, for the hero carousel. */
 export const INTRO_END_EVENT = "kasityot:intro-end";
+
+declare global {
+  interface Window {
+    /** Tells the reveal script's backstop that this component has taken over. */
+    __kIntroRunning?: boolean;
+  }
+}
 
 /** Resolves when the hero's first image has loaded (or failed). */
 function heroImage(): Promise<void> {
@@ -35,9 +44,11 @@ function pageLoad(): Promise<void> {
 
 /**
  * Warp threads on a loom, swaying like cloth in a draught: the moving
- * ground behind the preloader. Returns a function that stops it.
+ * ground behind the preloader. With `still` set it draws the loom once and
+ * leaves it, for a reduced-motion preference. Returns a function that
+ * stops it.
  */
-function weave(canvas: HTMLCanvasElement): () => void {
+function weave(canvas: HTMLCanvasElement, still: boolean): () => void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return () => {};
 
@@ -50,9 +61,9 @@ function weave(canvas: HTMLCanvasElement): () => void {
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Resizing clears a canvas; a still loom has no next frame to redraw it.
+    if (still) draw(0);
   };
-  resize();
-  window.addEventListener("resize", resize);
 
   let frame = 0;
   const draw = (t: number) => {
@@ -103,9 +114,12 @@ function weave(canvas: HTMLCanvasElement): () => void {
     ctx.fillStyle = pass;
     ctx.fillRect(0, band - 90, width, 180);
 
-    frame = requestAnimationFrame(draw);
+    if (!still) frame = requestAnimationFrame(draw);
   };
-  frame = requestAnimationFrame(draw);
+
+  window.addEventListener("resize", resize);
+  resize();
+  if (!still) frame = requestAnimationFrame(draw);
 
   return () => {
     cancelAnimationFrame(frame);
@@ -121,7 +135,8 @@ function weave(canvas: HTMLCanvasElement): () => void {
  *
  * The sheet is raised by the inline reveal script before first paint and
  * styled by .k-intro in globals.css; it is display:none on every other
- * visit, page and preference.
+ * page and on client-side navigation back to this one. A reduced-motion
+ * preference gets the same opening as fades on a still loom.
  */
 export function Preloader() {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -131,8 +146,15 @@ export function Preloader() {
   useEffect(() => {
     const root = document.documentElement;
     if (root.getAttribute("data-intro") !== "play") return;
+    window.__kIntroRunning = true;
 
-    const stopWeave = canvas.current ? weave(canvas.current) : () => {};
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const minMs = reduced ? MIN_MS_REDUCED : MIN_MS;
+    const stopWeave = canvas.current
+      ? weave(canvas.current, reduced)
+      : () => {};
 
     // Real progress: each of these is a third of the way.
     let loaded = 0.1;
@@ -143,12 +165,17 @@ export function Preloader() {
     heroImage().then(step);
     pageLoad().then(step);
 
-    const start = performance.now();
+    // Set by the first frame rather than now: frames only run once the page
+    // is on screen, so a tab opened in the background still gets its whole
+    // opening when it is brought forward instead of a counter already at 100.
+    let start = -1;
     let shown = 0;
     let frame = 0;
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     const finish = () => {
+      // Never raise a sheet that something else has already taken down.
+      if (root.getAttribute("data-intro") !== "play") return;
       root.setAttribute("data-intro", "leaving");
       window.dispatchEvent(new Event(INTRO_END_EVENT));
       timers.push(
@@ -160,10 +187,11 @@ export function Preloader() {
     };
 
     const tick = (now: number) => {
+      if (start < 0) start = now;
       const elapsed = now - start;
-      // The counter may not outrun the page, nor finish before MIN_MS.
+      // The counter may not outrun the page, nor finish before the minimum.
       const target =
-        elapsed > MAX_MS ? 1 : Math.min(loaded, elapsed / MIN_MS);
+        elapsed > MAX_MS ? 1 : Math.min(loaded, elapsed / minMs);
       shown += (target - shown) * 0.06;
       if (target === 1 && shown > 0.995) shown = 1;
 
@@ -177,6 +205,7 @@ export function Preloader() {
     frame = requestAnimationFrame(tick);
 
     return () => {
+      window.__kIntroRunning = false;
       cancelAnimationFrame(frame);
       timers.forEach(clearTimeout);
       stopWeave();

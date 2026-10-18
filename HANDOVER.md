@@ -4,13 +4,16 @@ This guide is for whoever looks after the site day to day. It assumes no
 technical background. Nothing here can break the site permanently — if
 something looks wrong, stop and call your developer.
 
-There are three web addresses:
+There are four web addresses:
 
 - **The shop** — what your customers see.
 - **The owner panel** — where you add artwork, add artists, and read
   enquiries. Only you can open this.
 - **The artist studio** — where artists apply to join and send you
   photographs of their work. They sign in here; you never do.
+- **The wholesaler panel** (wholesaler.kasityot.com) — where trade buyers
+  register, see your wholesale catalogue and ask for prices. They sign in
+  here; you manage it from the owner panel.
 
 ---
 
@@ -253,7 +256,55 @@ signed in.
 
 ---
 
-## 9. Things worth knowing
+## 9. Wholesale
+
+Wholesale has its own section in the owner panel: click **Wholesale** in the
+top menu. It has three tabs: **Products**, **Wholesalers** and **Enquiries**.
+
+**Nothing in Wholesale ever appears on the shop.** Wholesale products and
+their prices are only shown to trade buyers you have approved, on the
+wholesaler panel.
+
+### Adding a wholesale product
+
+1. **Wholesale** → **Add product**.
+2. Fill in the title and description. Category, material, dimensions and
+   minimum order are optional.
+3. **Trade price per unit** is optional too, and usually left blank. Blank
+   shows **Price on enquiry**, and buyers then ask you for a figure.
+4. Add photographs the same way as for artwork, and save.
+
+Use **Hide** to take a product off the wholesaler panel without deleting it.
+
+These are separate from your shop artwork. Adding a piece here does not add
+it to the shop, and the other way round.
+
+### Approving trade buyers
+
+Anyone can register on the wholesaler panel, but **they see nothing until you
+approve them.** New registrations show as a number next to **Wholesale** in
+the menu.
+
+1. **Wholesale** → **Wholesalers**. Click a business name to see their GSTIN
+   and what they wrote about themselves.
+2. **Approve** — they can see the catalogue on their next click. They are
+   emailed to say so.
+3. **Reject** — type a reason. They are shown it when they sign in.
+
+To stop an approved buyer seeing prices, press **Revoke** and give a reason.
+It takes effect straight away, even if they are signed in. You can approve
+them again later.
+
+### Trade enquiries
+
+When a buyer asks about a product, it appears under **Wholesale** →
+**Enquiries** with their business, phone, email and the quantity they want.
+These are kept apart from shop enquiries. Mark them **new**, **contacted** or
+**closed**, and keep private notes, just like the shop inbox.
+
+---
+
+## 10. Things worth knowing
 
 **Changes can take up to a minute to show.** The home page refreshes itself
 about once a minute. If you have just changed something and do not see it,
@@ -276,7 +327,7 @@ photos.
 
 ---
 
-## 10. If something goes wrong
+## 11. If something goes wrong
 
 | What you see | What to do |
 |---|---|

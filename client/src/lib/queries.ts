@@ -419,11 +419,19 @@ export type HeroSlideView = {
   subtext: string;
 };
 
+/**
+ * Follows "Handmade in" in the hero's eyebrow, where "India" used to be.
+ *
+ * TODO: the final wording has not been supplied yet. Replace this before
+ * deploying, or the placeholder shows on the live home page.
+ */
+export const HERO_TAGLINE = "[TAGLINE]";
+
 /** The approved design's own hero copy, used when a field is left blank. */
 export const HERO_DEFAULTS = {
   image: "/design/a7cbff28-f98a-4d87-b8e1-ff3b89c4275c.jpg",
   alt: "An artist at work",
-  eyebrow: "Handmade in India",
+  eyebrow: `Handmade in ${HERO_TAGLINE}`,
   heading: "The hand,",
   headingAccent: "unhurried.",
   subtext:

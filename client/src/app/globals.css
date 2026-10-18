@@ -58,6 +58,7 @@
   --text-card-title: clamp(24px, 2vw, 30px);
   --text-card-title-sm: clamp(22px, 1.8vw, 29px);
   --text-lede: clamp(16px, 1.15vw, 19px);
+  --text-eyebrow-hero: clamp(13px, 1.25vw, 19px); /* the hero's "Handmade in" line */
 
   /* --- Type scale: fixed --- */
   --text-label: 10px; /* mono eyebrows, nav, buttons */
@@ -644,6 +645,15 @@
       animation: kSheetLift 500ms ease-out both;
     }
   }
+
+  /* A page loaded out of sight — a background tab, a prerender — holds
+     every entrance at its first frame until it is first on screen. The
+     reveal script sets and clears this. */
+  [data-wait] *,
+  [data-wait] *::before,
+  [data-wait] *::after {
+    animation-play-state: paused !important;
+  }
 }
 
 /* Scroll-linked motion is progressive: browsers without scroll timelines
@@ -662,21 +672,98 @@
   }
 }
 
-/* Respect the reader's motion preference — the design's animations are
-   decorative, so drop them rather than degrade them. */
+/* ------------------------------------------------------------------
+   Reduced motion.
+   Windows reports this preference whenever "Animation effects" is off,
+   which many laptops ship with, and every browser on the machine follows
+   it, private windows included. Cutting every animation to nothing used
+   to make the site look broken for all of those visitors, most of whom
+   never chose it.
+
+   What the preference asks to avoid is movement: things sliding, zooming,
+   drifting or advancing by themselves. Only that goes. Entrances still
+   play, as fades in place and a little quicker. Wipes, drawn rules and
+   covers lifting off images uncover things without moving them, so they
+   stay as they are. The banner also stops advancing by itself (see
+   HeroCarousel), and parallax and the scroll hairline only run under
+   no-preference above.
+
+   These rules sit outside any layer, so they win over the layered rules
+   they replace without needing !important.
+------------------------------------------------------------------ */
+@keyframes kFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes kFadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0s !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    transition-delay: 0s !important;
+  :root {
+    --duration-line: 700ms;
+    --duration-reveal: 700ms;
   }
 
-  .k-zoom {
-    animation: none !important;
-    transform: none !important;
+  /* Lines of type, and the preloader's mark, name and counter, fade up
+     where they stand instead of sliding out from behind an edge. */
+  .animate-line,
+  .k-intro-mark,
+  .k-intro-letter,
+  .k-intro-tagline,
+  .k-intro-rail {
+    animation-name: kFade;
+  }
+
+  /* The sheet fades away rather than sliding off the top. */
+  [data-intro="leaving"] .k-intro,
+  [data-intro="leaving"] .k-intro-stage {
+    animation-name: kFadeOut;
+  }
+
+  /* No slow drift on the banner photographs. */
+  .k-zoom,
+  [data-active="true"] > .k-zoom {
+    animation: none;
+    transform: none;
+  }
+
+  /* Scroll reveals that would move or grow fade instead. */
+  [data-js] :is(.rv-line, .rv-word, .rv-char, .rv-slide, .rv-slide-l, .rv-pop) {
+    transform: none;
+    opacity: 0;
+    transition-property: opacity;
+  }
+
+  [data-js]
+    :is(
+      [data-shown].rv-line,
+      [data-shown] .rv-line,
+      [data-shown].rv-word,
+      [data-shown] .rv-word,
+      [data-shown].rv-char,
+      [data-shown] .rv-char,
+      [data-shown].rv-slide,
+      [data-shown] .rv-slide,
+      [data-shown].rv-slide-l,
+      [data-shown] .rv-slide-l,
+      [data-shown].rv-pop,
+      [data-shown] .rv-pop
+    ) {
+    opacity: 1;
+  }
+
+  /* An image settling back from a zoom is all movement; it starts at rest. */
+  [data-js] .rv-zoom {
+    transform: none;
+    transition: none;
   }
 }

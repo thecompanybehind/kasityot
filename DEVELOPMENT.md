@@ -1,16 +1,17 @@
 # Kasityot — developer notes
 
-Three Next.js apps and one shared package, in an npm workspace.
+Four Next.js apps and one shared package, in an npm workspace.
 
 ```
 kasityot/
-  client/          the public shop            :3000
+  client/          the public shop            :3000   kasityot.com
   admin/           the owner panel            :3001
   artist/          the artist studio          :3002
+  wholesale/       the wholesaler panel       :3003   wholesaler.kasityot.com
   packages/core/   Mongoose models + the Atlas connection
 ```
 
-One MongoDB Atlas database behind all three. Cloudinary for images, Razorpay
+One MongoDB Atlas database behind all four. Cloudinary for images, Razorpay
 for payments, Resend for email.
 
 > `README.md` is the original build prompt, kept as a record of what was
@@ -25,11 +26,15 @@ npm install                      # from the repo root: installs all workspaces
 cp client/.env.example client/.env.local
 cp admin/.env.example  admin/.env.local
 cp artist/.env.example artist/.env.local
+cp wholesale/.env.example wholesale/.env.local
 # fill in the values, then:
-npm run dev --workspace client   # or admin, or artist
+npm run dev --workspace client   # or admin, artist, wholesale
 ```
 
-All three apps must point at the same `DATABASE_URL`.
+All four apps must point at the same `DATABASE_URL`.
+
+**`WHOLESALE_SESSION_SECRET` must differ from both other secrets**, for the
+same reason as below.
 
 **`ARTIST_SESSION_SECRET` must not equal the owner panel's `SESSION_SECRET`.**
 If they match, a token minted by the studio verifies inside the owner panel,
@@ -37,7 +42,8 @@ and only a `role` claim stands between an artist and the admin surface. Two
 secrets make that forgery impossible rather than merely guarded against.
 
 `admin` needs `NEXT_PUBLIC_ARTIST_URL` to build invite links that point at the
-studio.
+studio, and `NEXT_PUBLIC_WHOLESALE_URL` for the sign-in link in the email a
+wholesaler gets when approved.
 
 ## The shared package
 
@@ -138,6 +144,87 @@ artist rejected after signing in loses access at once rather than when their
 two-week token expires. The Edge proxy only verifies the signature — it has no
 database access — so that deeper check belongs on the page.
 
+## Wholesale
+
+Trade buyers get their own catalogue, with optional prices, on
+`wholesaler.kasityot.com`. **Wholesale products and prices must never reach
+the public shop**, and three things keep them out:
+
+1. **Separate collections.** `WholesaleProduct`, `Wholesaler` and
+   `WholesaleEnquiry` are not flags on `Artwork` or `Enquiry`, so no public
+   query, however careless, can return one. Compare the review gate above,
+   which relies on a filter that a forgotten spread would leak through.
+2. **A separate entry point.** The models are exported from
+   `@kasityot/core/wholesale`, not the main barrel, and
+   `client/eslint.config.mjs` fails the lint on any import of it. Only
+   `admin/` and `wholesale/` import it.
+3. **A separate app on its own subdomain.** The shop has no wholesale code to
+   bundle. The panel's session cookie has no `Domain`, so it stays on the
+   subdomain, and the whole app is `noindex` with a `Disallow: /` robots.txt.
+
+### Accounts
+
+Wholesalers register themselves with a password, unlike artists, who are
+invited, because there is nothing a wholesaler can publish. An account starts
+`pending` and **sees no products or prices until the owner approves it** under
+Wholesale → Wholesalers. A pending or rejected wholesaler can still sign in,
+but only to see a status page (with the owner's reason, if refused).
+
+The password hash sits on the `Wholesaler` document with `select: false`, so
+no query returns it unless it asks by name; only `verifyWholesaler` does. Admin
+views are built field by field as well.
+
+`getWholesaler()` re-reads the status from the database on every request, so
+approving opens the catalogue on the buyer's next click and revoking closes it
+the same way. Every page that shows products checks `status === "approved"`
+**in the page itself**, before any product query, never in a layout: Next
+renders layouts and pages in parallel, so a layout check would not stop the
+page's own reads.
+
+Sign-in is rate limited per IP and per email; registration per IP; enquiries
+per account. The same per-instance caveat applies as for the join form.
+
+### Deploying the subdomain
+
+`wholesale/` is its own Vercel project, like `artist/` will be:
+
+1. New Vercel project from this repo, root directory `wholesale`.
+2. Env vars from `wholesale/.env.example`: the shared `DATABASE_URL`, a fresh
+   `WHOLESALE_SESSION_SECRET` (`openssl rand -base64 48`), and the Resend trio
+   if owner emails are wanted.
+3. Add the domain `wholesaler.kasityot.com` to that project, then at the DNS
+   provider a `CNAME` from `wholesaler` to `cname.vercel-dns.com`.
+4. Set `NEXT_PUBLIC_WHOLESALE_URL=https://wholesaler.kasityot.com` on the
+   **admin** project and redeploy it.
+
+## Motion and reduced-motion
+
+The shop's entrances are CSS animations and transitions (`globals.css`),
+started by `REVEAL_SCRIPT` in `client/src/components/ui/Reveal.tsx`, which runs
+inline before first paint.
+
+`prefers-reduced-motion: reduce` used to cut **every** animation to 0.01ms.
+Windows reports that preference whenever *Settings → Accessibility → Visual
+effects → Animation effects* is off, which many laptops ship with, and every
+browser on the machine follows it, private windows included. On those
+machines the site had no motion at all and looked broken. Now:
+
+- **Removed under reduce:** movement only. Lines sliding up become fades in
+  place; the banner's slow zoom, parallax and the scroll hairline are off; the
+  banner does not auto-advance; scroll reveals that slide, grow or zoom fade
+  instead.
+- **Kept:** wipes, drawn rules and image covers lifting, which uncover without
+  moving anything; the price count-up; the home preloader, as fades on a still
+  loom with a shorter minimum.
+
+A page loaded out of sight (a background tab, a prerender) used to play its
+whole opening unseen. `data-wait` on `<html>` now pauses every animation until
+the page is first visible, and the preloader's clock starts on its first frame.
+The 12-second backstop only fires if the preloader component never mounts.
+
+To test, toggle *Emulate CSS media feature prefers-reduced-motion* in Chrome
+DevTools → Rendering, or switch the Windows setting above.
+
 ## Invites
 
 Minted in `admin/src/lib/invite.ts`. 32 bytes of CSPRNG output; only the
@@ -168,8 +255,8 @@ emailing on with no code change; until then the panel falls back to copy-paste.
 ## Verification
 
 ```bash
-npx tsc --noEmit    # in each of the four packages
-npm run build       # in client, admin, artist
+npx tsc --noEmit    # in each of the five packages
+npm run build       # in client, admin, artist, wholesale
 npx eslint src      # in each app
 ```
 

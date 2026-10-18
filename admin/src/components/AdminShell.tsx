@@ -16,16 +16,22 @@ const NAV = [
   { label: "About", href: "/about" },
   { label: "Enquiries", href: "/enquiries" },
   { label: "Customers", href: "/customers" },
+  { label: "Wholesale", href: "/wholesale", badge: "wholesale" },
 ] as const;
 
 /**
- * Counts for the two review queues.
+ * Counts for the queues waiting on the owner.
  *
  * Nothing an artist does reaches the public site until the owner acts, so a
  * queue nobody notices is this design's main failure mode — the count rides
- * in the nav on every page rather than only on the dashboard.
+ * in the nav on every page rather than only on the dashboard. Wholesale
+ * registrations wait on the owner in the same way.
  */
-export type QueueCounts = { applications: number; submissions: number };
+export type QueueCounts = {
+  applications: number;
+  submissions: number;
+  wholesale: number;
+};
 
 export function AdminShell({
   email,

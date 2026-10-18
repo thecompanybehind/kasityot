@@ -9,6 +9,7 @@ import {
   Order,
 } from "@kasityot/core";
 import type { AboutContent } from "@kasityot/core/about";
+import { WholesaleEnquiry, Wholesaler } from "@kasityot/core/wholesale";
 
 /**
  * Admin reads. Unlike the public site these deliberately include hidden
@@ -212,15 +213,24 @@ export async function getDashboardStats() {
 export async function getQueueCounts(): Promise<{
   applications: number;
   submissions: number;
+  wholesale: number;
 }> {
   await connectDB();
-  const [applications, artworks, videos] = await Promise.all([
-    Artist.countDocuments({ applicationStatus: "pending" }),
-    Artwork.countDocuments({ reviewStatus: "pending" }),
-    Artist.countDocuments({ videoReviewStatus: "pending" }),
-  ]);
-  // Videos are reviewed on the submissions page, so they share its badge.
-  return { applications, submissions: artworks + videos };
+  const [applications, artworks, videos, wholesalers, wholesaleEnquiries] =
+    await Promise.all([
+      Artist.countDocuments({ applicationStatus: "pending" }),
+      Artwork.countDocuments({ reviewStatus: "pending" }),
+      Artist.countDocuments({ videoReviewStatus: "pending" }),
+      Wholesaler.countDocuments({ status: "pending" }),
+      WholesaleEnquiry.countDocuments({ status: "new" }),
+    ]);
+  return {
+    applications,
+    // Videos are reviewed on the submissions page, so they share its badge.
+    submissions: artworks + videos,
+    // Registrations to decide on and enquiries to answer share one badge.
+    wholesale: wholesalers + wholesaleEnquiries,
+  };
 }
 
 /**

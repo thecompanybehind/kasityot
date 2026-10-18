@@ -123,8 +123,8 @@ export function HeroCarousel({
             hidden={i !== index}
             className="flex max-w-[min(100%,1060px)] flex-col gap-6.5"
           >
-            <div className="flex items-center gap-4 font-mono text-label tracking-wider text-brass uppercase">
-              <span className="block h-px w-[34px] animate-rule bg-brass" />
+            <div className="flex items-center gap-4 font-mono text-eyebrow-hero font-bold tracking-wide text-brass uppercase">
+              <span className="block h-px w-[clamp(34px,3.4vw,52px)] shrink-0 animate-rule bg-brass" />
               <span className="mask-line">
                 <span className="animate-line">{slide.eyebrow}</span>
               </span>

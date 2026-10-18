@@ -20,7 +20,8 @@ const sans = Jost({
 
 const mono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400"],
+  // 700 is the hero eyebrow; without it the browser fakes a bold.
+  weight: ["400", "700"],
   display: "swap",
   variable: "--font-plex-mono",
 });

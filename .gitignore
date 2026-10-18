@@ -44,4 +44,6 @@ next-env.d.ts
 # npm workspaces hoist to the root; per-app lockfiles would drift.
 /admin/package-lock.json
 /client/package-lock.json
+/artist/package-lock.json
 /packages/*/package-lock.json
+/wholesale/package-lock.json

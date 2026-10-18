@@ -109,13 +109,13 @@ export function HeroSlideForm({ slide }: { slide: HeroSlideView | null }) {
           <Field
             label="Small label"
             htmlFor="eyebrow"
-            hint="The little line above the big text. Default: “Handmade in India”."
+            hint="The bold line above the big text. Leave blank for the site's default “Handmade in …” line."
           >
             <input
               id="eyebrow"
               name="eyebrow"
               defaultValue={slide?.eyebrow}
-              placeholder="Handmade in India"
+              placeholder="Handmade in …"
               className={fieldClass}
             />
           </Field>

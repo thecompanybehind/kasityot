@@ -12,6 +12,13 @@ export function formatPrice(paise: number | null): string {
   }).format(paise / 100);
 }
 
+/** A wholesale unit price. Blank is the norm there, and reads as an invitation. */
+export function formatTradePrice(paise: number | null): string {
+  return paise === null || paise === undefined
+    ? "Price on enquiry"
+    : `${formatPrice(paise)} / unit`;
+}
+
 /** Short date for the admin inbox, e.g. "14 Mar 2026, 4:32 pm". */
 export function formatDateTime(iso: string): string {
   return new Intl.DateTimeFormat("en-IN", {

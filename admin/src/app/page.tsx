@@ -78,6 +78,13 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,190px),1fr))] gap-5 pt-5">
         <Stat label="Artworks" value={stats.artworks} href="/artworks" />
         <Stat label="Artists" value={stats.artists} href="/artists" />
+        {/* New registrations and unanswered trade enquiries together. */}
+        <Stat
+          label="Wholesale to act on"
+          value={queues.wholesale}
+          href="/wholesale/wholesalers"
+          accent={queues.wholesale > 0}
+        />
       </div>
 
       <div className="flex flex-wrap gap-6 pt-6 font-mono text-label-sm tracking-rail text-slate uppercase">

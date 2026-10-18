@@ -8,6 +8,8 @@
  *
  * Consumers import from "@kasityot/core" rather than reaching into the
  * file tree, so the internal layout stays free to change.
+ *
+ * The wholesale models are deliberately not exported here; see wholesale.ts.
  */
 
 export { connectDB } from "./db";

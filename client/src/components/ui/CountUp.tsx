@@ -9,6 +9,9 @@ const DURATION_MS = 1600;
  * A price that counts up to its value the first time it is seen. The real
  * price is what the server renders, so it is correct before, without and
  * after the animation.
+ *
+ * It plays under a reduced-motion preference too: the figures change in
+ * place and nothing on the page moves.
  */
 export function CountUp({ paise }: { paise: number }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -16,7 +19,6 @@ export function CountUp({ paise }: { paise: number }) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let frame = 0;
     const observer = new IntersectionObserver(([entry]) => {
