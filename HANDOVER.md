@@ -157,6 +157,14 @@ deleting it.
 
 ---
 
+### Changing your phone number, email or address
+
+Click **Contact** in the top menu. Change the phone number, email or studio
+address and press **Save contact details**. The Contact page updates within
+a minute. Leave a box empty to go back to what is shown faintly in it.
+
+---
+
 ## 7. Money and payments
 
 Payments are handled by **Razorpay**, using your own Razorpay account. The

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   AboutPage,
   connectDB,
+  ContactSettings,
   Artist,
   ArtistUser,
   Artwork,
@@ -801,5 +802,48 @@ export async function saveAbout(form: FormData): Promise<ActionResult> {
   }
 
   revalidatePath("/about");
+  return { ok: true };
+}
+
+/* ---------------------------------------------------------------- *
+ * Contact details
+ * ---------------------------------------------------------------- */
+
+/**
+ * Saves the contact page's email, phone number and studio address. One
+ * document, created on first save. A blank field goes back to the default,
+ * so it is stored blank rather than rejected.
+ */
+export async function saveContactSettings(form: FormData): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+
+  const email = str(form, "email").toLowerCase();
+  const phone = str(form, "phone");
+  const address = str(form, "address");
+
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return { ok: false, error: "That email address does not look right." };
+  }
+  // Checked here because the site turns it into a tap-to-call link, which a
+  // number missing digits would quietly break.
+  if (phone && (phone.replace(/\D/g, "").length < 10 || /[^\d\s+()-]/.test(phone))) {
+    return {
+      ok: false,
+      error: "Enter the phone number with at least 10 digits, e.g. +91 99200 22433.",
+    };
+  }
+
+  try {
+    await ContactSettings.findOneAndUpdate(
+      {},
+      { email, phone, address },
+      { upsert: true },
+    );
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
+  }
+
+  revalidatePath("/contact");
   return { ok: true };
 }

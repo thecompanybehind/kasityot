@@ -1,5 +1,15 @@
-import { AboutPage, connectDB, Artist, Artwork, Enquiry, HeroSlide, Order } from "@kasityot/core";
+import {
+  AboutPage,
+  connectDB,
+  ContactSettings,
+  Artist,
+  Artwork,
+  Enquiry,
+  HeroSlide,
+  Order,
+} from "@kasityot/core";
 import { ABOUT_DEFAULTS, type AboutContent } from "@kasityot/core/about";
+import { CONTACT_DEFAULTS, type ContactInfo } from "@kasityot/core/contact";
 
 /**
  * Read helpers shared by the public site and the admin panel.
@@ -496,4 +506,20 @@ export async function getAboutContent(): Promise<AboutContent> {
     principlesTitle: pick("principlesTitle"),
     principles: principles.length ? principles : ABOUT_DEFAULTS.principles,
   };
+}
+
+/* ---------------------------------------------------------------- *
+ * Contact details
+ * ---------------------------------------------------------------- */
+
+/**
+ * The contact details the owner set in the panel, each blank one filled from
+ * the defaults. A missing document reads as all defaults.
+ */
+export async function getContactInfo(): Promise<ContactInfo> {
+  await connectDB();
+  const doc = await ContactSettings.findOne().lean();
+  const pick = (key: keyof ContactInfo) =>
+    ((doc?.[key] as string | undefined) ?? "").trim() || CONTACT_DEFAULTS[key];
+  return { email: pick("email"), phone: pick("phone"), address: pick("address") };
 }

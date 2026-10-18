@@ -18,6 +18,10 @@ export { AboutPage, type AboutPageDoc } from "./models/AboutPage";
 export { Artist, type ArtistDoc } from "./models/Artist";
 export { Artwork, type ArtworkDoc } from "./models/Artwork";
 export { ArtistUser, type ArtistUserDoc } from "./models/ArtistUser";
+export {
+  ContactSettings,
+  type ContactSettingsDoc,
+} from "./models/ContactSettings";
 export { Enquiry, type EnquiryDoc } from "./models/Enquiry";
 export { HeroSlide, type HeroSlideDoc } from "./models/HeroSlide";
 export { Order, type OrderDoc } from "./models/Order";

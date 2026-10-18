@@ -14,6 +14,7 @@ const NAV = [
   { label: "Submissions", href: "/submissions", badge: "submissions" },
   { label: "Banner", href: "/hero" },
   { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
   { label: "Enquiries", href: "/enquiries" },
   { label: "Customers", href: "/customers" },
   { label: "Wholesale", href: "/wholesale", badge: "wholesale" },

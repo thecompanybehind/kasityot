@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { Fragment } from "react";
+import { telHref } from "@kasityot/core/contact";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { getContactInfo } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Contact — Kasityot",
@@ -8,20 +11,28 @@ export const metadata: Metadata = {
     "Questions about a piece, a commission or an order? Reach the Kasityot studio directly.",
 };
 
-const CHANNELS = [
-  {
-    label: "Email",
-    value: "hello@kasityot.com",
-    href: "mailto:hello@kasityot.com",
-  },
-  {
-    label: "Phone / WhatsApp",
-    value: "+91 99200 22433",
-    href: "tel:+919920022433",
-  },
-];
+/**
+ * The details are edited from the owner panel. Without this the page would
+ * be baked at build time and a changed number would wait for the next deploy.
+ */
+export const revalidate = 60;
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const contact = await getContactInfo();
+  const CHANNELS = [
+    {
+      label: "Email",
+      value: contact.email,
+      href: `mailto:${contact.email}`,
+    },
+    {
+      label: "Phone / WhatsApp",
+      value: contact.phone,
+      href: telHref(contact.phone),
+    },
+  ];
+  const addressLines = contact.address.split(/\r?\n/).filter((l) => l.trim());
+
   return (
     <section className="px-(--spacing-section-x) py-(--spacing-section-y)">
       <SectionHeading eyebrow="Get in touch" title="Contact" />
@@ -82,9 +93,12 @@ export default function ContactPage() {
               </span>
             </div>
             <p className="rv-unroll m-0 text-body leading-[1.8] text-bone-soft [--rv-offset:900ms]">
-              Kasityot
-              <br />
-              Handmade in India
+              {addressLines.map((line, i) => (
+                <Fragment key={i}>
+                  {i > 0 ? <br /> : null}
+                  {line}
+                </Fragment>
+              ))}
             </p>
             <p className="rv-unroll m-0 pt-6 text-body-sm leading-[1.7] text-bone-muted [--rv-offset:1200ms]">
               We reply to most messages within two working days. For

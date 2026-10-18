@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./video": "./src/video.ts",
     "./about": "./src/about.ts",
+    "./contact": "./src/contact.ts",
     "./wholesale": "./src/wholesale.ts"
   },
   "scripts": {

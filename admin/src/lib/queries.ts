@@ -1,6 +1,7 @@
 import {
   AboutPage,
   connectDB,
+  ContactSettings,
   Artist,
   ArtistUser,
   Artwork,
@@ -9,6 +10,7 @@ import {
   Order,
 } from "@kasityot/core";
 import type { AboutContent } from "@kasityot/core/about";
+import type { ContactInfo } from "@kasityot/core/contact";
 import { WholesaleEnquiry, Wholesaler } from "@kasityot/core/wholesale";
 
 /**
@@ -553,5 +555,23 @@ export async function getAboutContent(): Promise<AboutContent> {
     principles: ((doc?.principles as AboutContent["principles"]) ?? []).map(
       (p) => ({ title: p.title ?? "", body: p.body ?? "" }),
     ),
+  };
+}
+
+/* ---------------------------------------------------------------- *
+ * Contact details
+ * ---------------------------------------------------------------- */
+
+/**
+ * The contact details exactly as saved: blanks stay blank, so the form shows
+ * the default as a placeholder rather than pretending the owner typed it.
+ */
+export async function getContactSettings(): Promise<ContactInfo> {
+  await connectDB();
+  const doc = await ContactSettings.findOne().lean();
+  return {
+    email: (doc?.email as string) ?? "",
+    phone: (doc?.phone as string) ?? "",
+    address: (doc?.address as string) ?? "",
   };
 }
