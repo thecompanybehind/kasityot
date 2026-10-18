@@ -1,4 +1,5 @@
-import { connectDB, Artist, Artwork, Enquiry, HeroSlide, Order } from "@kasityot/core";
+import { AboutPage, connectDB, Artist, Artwork, Enquiry, HeroSlide, Order } from "@kasityot/core";
+import { ABOUT_DEFAULTS, type AboutContent } from "@kasityot/core/about";
 
 /**
  * Read helpers shared by the public site and the admin panel.
@@ -454,4 +455,37 @@ export async function getHeroSlides(): Promise<HeroSlideView[]> {
     headingAccent: (d.headingAccent as string) || HERO_DEFAULTS.headingAccent,
     subtext: (d.subtext as string) || HERO_DEFAULTS.subtext,
   }));
+}
+
+/* ---------------------------------------------------------------- *
+ * About page
+ * ---------------------------------------------------------------- */
+
+/**
+ * The About page's wording, with each field the owner left blank filled from
+ * the design's own copy. Never fails to a blank page: a missing document, or
+ * an empty list of principles, reads as the defaults.
+ */
+export async function getAboutContent(): Promise<AboutContent> {
+  await connectDB();
+  const doc = await AboutPage.findOne().lean();
+  const pick = (key: Exclude<keyof AboutContent, "principles">) =>
+    ((doc?.[key] as string | undefined) ?? "").trim() || ABOUT_DEFAULTS[key];
+
+  const principles = ((doc?.principles as AboutContent["principles"]) ?? [])
+    .map((p) => ({ title: (p.title ?? "").trim(), body: (p.body ?? "").trim() }))
+    .filter((p) => p.title && p.body);
+
+  return {
+    heroImage: pick("heroImage"),
+    heroAlt: pick("heroAlt"),
+    heading: pick("heading"),
+    headingAccent: pick("headingAccent"),
+    premiseEyebrow: pick("premiseEyebrow"),
+    premiseTitle: pick("premiseTitle"),
+    premiseBody: pick("premiseBody"),
+    principlesEyebrow: pick("principlesEyebrow"),
+    principlesTitle: pick("principlesTitle"),
+    principles: principles.length ? principles : ABOUT_DEFAULTS.principles,
+  };
 }

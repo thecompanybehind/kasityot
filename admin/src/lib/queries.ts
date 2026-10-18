@@ -1,4 +1,5 @@
 import {
+  AboutPage,
   connectDB,
   Artist,
   ArtistUser,
@@ -7,6 +8,7 @@ import {
   HeroSlide,
   Order,
 } from "@kasityot/core";
+import type { AboutContent } from "@kasityot/core/about";
 
 /**
  * Admin reads. Unlike the public site these deliberately include hidden
@@ -513,5 +515,33 @@ export async function getHeroSlide(id: string): Promise<HeroSlideView | null> {
     subtext: (d.subtext as string) ?? "",
     order: (d.order as number) ?? 0,
     status: d.status as HeroSlideView["status"],
+  };
+}
+
+/* ---------------------------------------------------------------- *
+ * About page
+ * ---------------------------------------------------------------- */
+
+/**
+ * What the owner has saved for the About page, exactly as saved: blanks stay
+ * blank so the form can show the default as a placeholder rather than
+ * pretending the owner typed it.
+ */
+export async function getAboutContent(): Promise<AboutContent> {
+  await connectDB();
+  const doc = await AboutPage.findOne().lean();
+  return {
+    heroImage: (doc?.heroImage as string) ?? "",
+    heroAlt: (doc?.heroAlt as string) ?? "",
+    heading: (doc?.heading as string) ?? "",
+    headingAccent: (doc?.headingAccent as string) ?? "",
+    premiseEyebrow: (doc?.premiseEyebrow as string) ?? "",
+    premiseTitle: (doc?.premiseTitle as string) ?? "",
+    premiseBody: (doc?.premiseBody as string) ?? "",
+    principlesEyebrow: (doc?.principlesEyebrow as string) ?? "",
+    principlesTitle: (doc?.principlesTitle as string) ?? "",
+    principles: ((doc?.principles as AboutContent["principles"]) ?? []).map(
+      (p) => ({ title: p.title ?? "", body: p.body ?? "" }),
+    ),
   };
 }

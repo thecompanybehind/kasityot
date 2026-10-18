@@ -12,6 +12,7 @@
 
 export { connectDB } from "./db";
 
+export { AboutPage, type AboutPageDoc } from "./models/AboutPage";
 export { Artist, type ArtistDoc } from "./models/Artist";
 export { Artwork, type ArtworkDoc } from "./models/Artwork";
 export { ArtistUser, type ArtistUserDoc } from "./models/ArtistUser";

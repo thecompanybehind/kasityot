@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  AboutPage,
   connectDB,
   Artist,
   ArtistUser,
@@ -745,5 +746,60 @@ export async function moveHeroSlide(
   );
 
   revalidatePath("/hero");
+  return { ok: true };
+}
+
+/* ---------------------------------------------------------------- *
+ * About page
+ * ---------------------------------------------------------------- */
+
+/**
+ * Saves the About page's wording. There is one document, created on first
+ * save.
+ *
+ * Blanks are stored as blank, not rejected: the public page falls back to the
+ * design's copy field by field. Principles arrive as parallel lists; a row
+ * with neither a title nor a body is dropped, and if every row is dropped the
+ * page goes back to its default three.
+ */
+export async function saveAbout(form: FormData): Promise<ActionResult> {
+  await requireOwner();
+  await connectDB();
+
+  const titles = form.getAll("principleTitle").map((v) => String(v).trim());
+  const bodies = form.getAll("principleBody").map((v) => String(v).trim());
+  const principles = titles
+    .map((title, i) => ({ title, body: bodies[i] ?? "" }))
+    .filter((p) => p.title || p.body);
+
+  if (principles.some((p) => !p.title || !p.body)) {
+    return {
+      ok: false,
+      error: "Each principle needs both a title and a sentence — or clear both to remove it.",
+    };
+  }
+
+  try {
+    await AboutPage.findOneAndUpdate(
+      {},
+      {
+        heroImage: str(form, "heroImage"),
+        heroAlt: str(form, "heroAlt"),
+        heading: str(form, "heading"),
+        headingAccent: str(form, "headingAccent"),
+        premiseEyebrow: str(form, "premiseEyebrow"),
+        premiseTitle: str(form, "premiseTitle"),
+        premiseBody: str(form, "premiseBody"),
+        principlesEyebrow: str(form, "principlesEyebrow"),
+        principlesTitle: str(form, "principlesTitle"),
+        principles,
+      },
+      { upsert: true },
+    );
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
+  }
+
+  revalidatePath("/about");
   return { ok: true };
 }

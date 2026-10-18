@@ -13,6 +13,7 @@ const NAV = [
   { label: "Applications", href: "/applications", badge: "applications" },
   { label: "Submissions", href: "/submissions", badge: "submissions" },
   { label: "Banner", href: "/hero" },
+  { label: "About", href: "/about" },
   { label: "Enquiries", href: "/enquiries" },
   { label: "Customers", href: "/customers" },
 ] as const;
