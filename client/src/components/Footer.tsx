@@ -61,7 +61,7 @@ export function Footer() {
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-bone/14 pt-6.5 font-mono text-label-sm tracking-rail text-slate-dim uppercase">
         <span>© {new Date().getFullYear()} Kasityot</span>
-        <span>Handmade in India</span>
+        <span className="font-bold text-brass">Soul of Perfection</span>
       </div>
     </footer>
   );

@@ -243,7 +243,7 @@ export function Preloader() {
           </div>
 
           <div className="k-intro-sub flex items-center gap-4 font-mono text-[clamp(10px,0.85vw,12px)] tracking-widest text-bone-soft uppercase">
-            <span>Handmade in India</span>
+            <span className="font-bold text-brass">Soul of Perfection</span>
             <span className="h-3.5 w-px bg-brass/60" />
             <span>One of a kind</span>
           </div>

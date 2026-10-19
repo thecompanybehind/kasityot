@@ -38,8 +38,8 @@ export function Header() {
           <span className="font-sans text-[12px] tracking-logo uppercase">
             Kasityot
           </span>
-          <span className="font-mono text-label-xs tracking-widest text-slate uppercase">
-            Handmade in India
+          <span className="font-mono text-label-sm font-bold tracking-widest text-brass uppercase">
+            Soul of Perfection
           </span>
         </span>
       </Link>
