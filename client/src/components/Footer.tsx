@@ -32,8 +32,8 @@ export function Footer() {
             height={207}
             className="h-[44px] w-auto self-start"
           />
-          <div className="font-sans text-[12px] tracking-logo uppercase">
-            Kasityot
+          <div className="font-display text-[24px] leading-none font-normal tracking-[0.22em]">
+            käsityöt
           </div>
           <p className="m-0 text-body-sm leading-[1.7] text-bone-muted">
             A marketplace for Indian handicraft. Every piece is one of a kind,

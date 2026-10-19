@@ -34,8 +34,8 @@ export default async function LoginPage({
           className="h-9.5 w-auto"
         />
         <span className="flex flex-col gap-0.75">
-          <span className="font-sans text-[12px] tracking-logo uppercase">
-            Kasityot
+          <span className="font-display text-[24px] leading-none font-normal tracking-[0.22em]">
+            käsityöt
           </span>
           <span className="font-mono text-label-xs tracking-widest text-slate uppercase">
             Wholesale

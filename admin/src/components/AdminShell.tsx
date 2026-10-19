@@ -62,8 +62,8 @@ export function AdminShell({
               className="logo-mark h-[34px] w-auto"
             />
             <span className="flex flex-col gap-[3px]">
-              <span className="font-sans text-[12px] tracking-logo uppercase">
-                Kasityot
+              <span className="font-display text-[24px] leading-none font-normal tracking-[0.22em]">
+                käsityöt
               </span>
               <span className="font-mono text-label-xs tracking-widest text-slate uppercase">
                 Owner panel
